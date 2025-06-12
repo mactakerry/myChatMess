@@ -48,7 +48,7 @@
             <br>
             <button type="submit">Submit</button>
             <br>
-            <button type="button">or registration</button>
+            <a href="/index.html"><button type="button">or registration</button></a>
         </form>
     </div>
 
@@ -73,6 +73,27 @@
                 e.target.value = fixedValue;
             }
         });
+
+        document.getElementById('myForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({username: document.getElementById('username').value, password: document.getElementById('password').value})
+            }).then(res => res.text())
+                .then(data => {
+                    alert(data);
+                    if (data === 'Success') {
+                        localStorage.setItem('username', document.getElementById('username').value);
+                        window.location.href = '/main.html';
+                    }
+                })
+
+                .catch(err => alert(err));
+        })
     </script>
 </body>
 </html>

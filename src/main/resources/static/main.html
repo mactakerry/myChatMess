@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        :root {
+            --theme-text-color: white;
+            --theme-aside-bgcolor: #212121;
+            --theme-main-bgcolor: black;
+        }
+
+        html {
+            font-family: sans-serif;
+        }
+        body {
+            margin: 0;
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            height: 100vh;
+            color: var(--theme-text-color);
+        }
+
+        aside {
+            background-color: var(--theme-aside-bgcolor);
+            border-right: 1px solid #3a3a3a;
+        }
+
+        .chatList {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chatInf {
+            padding: 30px;
+            border-radius: 20px;
+        }
+
+        .chatInf:hover {
+            background-color: gray;
+            cursor: pointer;
+        }
+
+        main {
+            background-color: var(--theme-main-bgcolor);
+            display: grid;
+            grid-auto-rows: auto 1fr;
+        }
+
+        .titleChat {
+            padding: 20px;
+            background-color: var(--theme-aside-bgcolor);
+
+        }
+
+        .chatContainer {
+            border: 1px solid var(--theme-text-color);
+            display: grid;
+            grid-template-rows: 1fr auto;
+            justify-content: center;
+            padding-bottom: 20px;
+            gap: 10px;
+        }
+
+        .chat {
+            width: 700px;
+            border: 1px solid white;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .sendMessage {
+            background-color: var(--theme-aside-bgcolor);
+            border-radius: 50px;
+            padding-left: 40px;
+        }
+
+        .chatInput {
+            border: none;
+            padding: 20px;
+            background-color: var(--theme-aside-bgcolor);
+            color: var(--theme-text-color);
+            font-size: 1rem;
+        }
+
+        .chatInput:focus {
+            outline: none;
+        }
+
+        .sendMessageButton {
+            border-radius: 100px;
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="chatList">
+            <div class="chatInf">awdawd</div>
+            <div class="chatInf">ddd</div>
+            <div class="chatInf">aaaa</div>
+        </div>
+    </aside>
+    <main>
+        <div class="titleChat"></div>
+        <div class="chatContainer">
+            <div class="chat"></div>
+            <div class="sendMessage">
+                <label>
+                    <input type="text" class="chatInput" placeholder="Message">
+                </label>
+                <button class="sendMessageButton">SEND</button>
+            </div>
+        </div>
+    </main>
+
+<script>
+    const titleChat = document.querySelector('.titleChat');
+
+    const chatInput = document.querySelector('.chatInput');
+
+    let currentChat = document.querySelector('.chatInf');
+
+    titleChat.textContent = currentChat.textContent;
+
+    document.querySelector('.chatList').addEventListener('click', (event) => {
+        if (!event.target.classList.contains('chatInf')) {
+            return;
+        }
+
+        titleChat.textContent = event.target.textContent;
+        currentChat = event.target;
+    })
+
+    document.querySelector('.sendMessageButton').addEventListener('click', () => {
+        const message = chatInput.value;
+        sendMessage(message);
+    })
+
+    function sendMessage(message) {
+        fetch('http://localhost:8080/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: message, sender: 'User', recipient: currentChat.textContent})
+        })
+            .then(res => res.text())
+            .then(data => {
+                alert(data);
+            })
+            .catch(err => console.log(err));
+    }
+
+</script>
+</body>
+</html>

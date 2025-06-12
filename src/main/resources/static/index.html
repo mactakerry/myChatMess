@@ -4,151 +4,104 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <style>
-        :root {
-            --theme-text-color: white;
-            --theme-aside-bgcolor: #212121;
-            --theme-main-bgcolor: black;
-        }
+      html {
+        font-size: 20px;
+      }
+      :root {
+        --theme-text-color: white;
+        --theme-aside-bgcolor: #212121;
+        --theme-main-bgcolor: black;
+      }
 
-        html {
-            font-family: sans-serif;
-        }
-        body {
-            margin: 0;
-            display: grid;
-            grid-template-columns: 400px 1fr;
-            height: 100vh;
-            color: var(--theme-text-color);
-        }
+      body {
+        padding-top: 50px;
+        background-color: var(--theme-aside-bgcolor);
+        color: var(--theme-text-color);
+      }
 
-        aside {
-            background-color: var(--theme-aside-bgcolor);
-            border-right: 1px solid #3a3a3a;
-        }
+      .container {
+        margin: 0 auto;
+        width: max-content;
+        padding: 50px;
+        background-color: var(--theme-main-bgcolor);
+        border-radius: 20px;
+      }
 
-        .chatList {
-            display: flex;
-            flex-direction: column;
-        }
+      button {
+        padding: 5px;
+      }
 
-        .chatInf {
-            padding: 30px;
-            border-radius: 20px;
-        }
-
-        .chatInf:hover {
-            background-color: gray;
-            cursor: pointer;
-        }
-
-        main {
-            background-color: var(--theme-main-bgcolor);
-            display: grid;
-            grid-auto-rows: auto 1fr;
-        }
-
-        .titleChat {
-            padding: 20px;
-            background-color: var(--theme-aside-bgcolor);
-
-        }
-
-        .chatContainer {
-            border: 1px solid var(--theme-text-color);
-            display: grid;
-            grid-template-rows: 1fr auto;
-            justify-content: center;
-            padding-bottom: 20px;
-            gap: 10px;
-        }
-
-        .chat {
-            width: 700px;
-            border: 1px solid white;
-            border-bottom: 1px solid #3a3a3a;
-        }
-
-        .sendMessage {
-            background-color: var(--theme-aside-bgcolor);
-            border-radius: 50px;
-            padding-left: 40px;
-        }
-
-        .chatInput {
-            border: none;
-            padding: 20px;
-            background-color: var(--theme-aside-bgcolor);
-            color: var(--theme-text-color);
-            font-size: 1rem;
-        }
-
-        .chatInput:focus {
-            outline: none;
-        }
-
-        .sendMessageButton {
-            border-radius: 100px;
-        }
+      button:hover {
+        cursor: pointer;
+      }
     </style>
 </head>
 <body>
-    <aside>
-        <div class="chatList">
-            <div class="chatInf">awdawd</div>
-            <div class="chatInf">ddd</div>
-            <div class="chatInf">aaaa</div>
-        </div>
-    </aside>
-    <main>
-        <div class="titleChat"></div>
-        <div class="chatContainer">
-            <div class="chat"></div>
-            <div class="sendMessage">
-                <label>
-                    <input type="text" class="chatInput" placeholder="Message">
-                </label>
-                <button class="sendMessageButton">SEND</button>
-            </div>
-        </div>
-    </main>
+<div class="container">
+  <form id="myForm" method="post">
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" required>
+    <br>
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" required>
+    <br>
+    <label for="repeatPassword">Repeat Password</label>
+    <input type="password" id="repeatPassword" required>
+      <br>
+    <button type="submit" id="send">Registration</button>
+    <br>
+      <a href="/authorization.html"><button type="button">or authorization</button></a>
+  </form>
+</div>
 
 <script>
-    const titleChat = document.querySelector('.titleChat');
+  document.getElementById('myForm').addEventListener('input', function(e) {
+    var value = e.target.value;
+    var fixedValue = "";
 
-    const chatInput = document.querySelector('.chatInput');
+    for(var i = 0; i < value.length; i++) {
+      var code = value.charCodeAt(i);
+      if ((code >= 48 && code <= 57) ||    // цифры 0-9
+              (code >= 65 && code <= 90) ||    // буквы A-Z
+              (code >= 97 && code <= 122)) {   // буквы a-z
+        fixedValue += value[i];
 
-    let currentChat = document.querySelector('.chatInf');
-
-    titleChat.textContent = currentChat.textContent;
-
-    document.querySelector('.chatList').addEventListener('click', (event) => {
-        if (!event.target.classList.contains('chatInf')) {
-            return;
-        }
-
-        titleChat.textContent = event.target.textContent;
-        currentChat = event.target;
-    })
-
-    document.querySelector('.sendMessageButton').addEventListener('click', () => {
-        const message = chatInput.value;
-        sendMessage(message);
-    })
-
-    function sendMessage(message) {
-        fetch('http://localhost:8080/send', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ text: message, sender: 'User', recipient: currentChat.textContent})
-        })
-            .then(res => res.text())
-            .then(data => {
-                alert(data);
-            })
-            .catch(err => console.log(err));
+      } else {
+        alert('Only Latin letters and numbers');
+      }
     }
+
+    if(value !== fixedValue) {
+      e.target.value = fixedValue;
+    }
+  });
+
+  document.getElementById('myForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+      var password = document.getElementById('password').value;
+      var confirm_password = document.getElementById('repeatPassword').value;
+
+      if(password !== confirm_password) {
+          alert('Пароли не совпадают!');
+          return;
+      }
+
+      const username = document.getElementById('username').value;
+      fetch('/registration', {
+          method: 'post',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username: username, password: password })
+      }).then(res => res.text())
+          .then(data => {
+              alert(data);
+          })
+          .catch(error => {
+              alert('Что то пошло не так');
+          })
+  });
 
 </script>
 </body>

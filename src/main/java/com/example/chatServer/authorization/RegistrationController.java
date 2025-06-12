@@ -1,5 +1,7 @@
-package com.example.chatServer;
+package com.example.chatServer.authorization;
 
+import com.example.chatServer.ChatServerApplication;
+import com.example.chatServer.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,7 +12,6 @@ import java.io.*;
 import java.util.ArrayList;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:63343")
 public class RegistrationController {
     ArrayList<String> usernames = com.example.chatServer.ChatServerApplication.usernames;
     ArrayList<User> users = ChatServerApplication.users;
@@ -18,7 +19,6 @@ public class RegistrationController {
 
 
     @PostMapping("/registration")
-    @CrossOrigin(origins = "http://localhost:63343")
     public ResponseEntity<String> registration(@RequestBody User user) {
 
         for (String username:usernames) {
@@ -48,6 +48,6 @@ public class RegistrationController {
             return ResponseEntity.status(500).body("Fatal error: " + e.toString());
         }
 
-        return ResponseEntity.ok("Успешно");
+        return ResponseEntity.ok("Success");
     }
 }
