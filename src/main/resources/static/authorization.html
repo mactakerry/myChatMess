@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        html {
+            font-size: 20px;
+        }
+        :root {
+            --theme-text-color: white;
+            --theme-aside-bgcolor: #212121;
+            --theme-main-bgcolor: black;
+        }
+
+        body {
+            padding-top: 50px;
+            background-color: var(--theme-aside-bgcolor);
+            color: var(--theme-text-color);
+        }
+
+        .container {
+            margin: 0 auto;
+            width: max-content;
+            padding: 50px;
+            background-color: var(--theme-main-bgcolor);
+            border-radius: 20px;
+        }
+
+        button {
+            padding: 5px;
+        }
+
+        button:hover {
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form id="myForm">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+            <br>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+            <br>
+            <button type="submit">Submit</button>
+            <br>
+            <button type="button">or registration</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('myForm').addEventListener('input', function(e) {
+            var value = e.target.value;
+            var fixedValue = "";
+
+            for(var i = 0; i < value.length; i++) {
+                var code = value.charCodeAt(i);
+                if ((code >= 48 && code <= 57) ||    // цифры 0-9
+                    (code >= 65 && code <= 90) ||    // буквы A-Z
+                    (code >= 97 && code <= 122)) {   // буквы a-z
+                    fixedValue += value[i];
+
+                } else {
+                    alert('Only Latin letters and numbers');
+                }
+            }
+
+            if(value !== fixedValue) {
+                e.target.value = fixedValue;
+            }
+        });
+    </script>
+</body>
+</html>
