@@ -1,4 +1,4 @@
-package com.example.chatServer;
+package com.example.chatServer.Message;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,8 +14,6 @@ public class MessageController {
 
     @PostMapping("/send")
     public ResponseEntity<String> sendMessage(@RequestBody Message message) {
-        messageService.sendMessage(message);
-        System.out.println(message.getText());
-        return ResponseEntity.ok("Сообщение Отправлено " + message.getRecipient());
+        return ResponseEntity.ok("Сообщение Отправлено ");
     }
 }

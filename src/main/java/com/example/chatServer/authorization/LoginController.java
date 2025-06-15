@@ -1,7 +1,7 @@
 package com.example.chatServer.authorization;
 
 import com.example.chatServer.ChatServerApplication;
-import com.example.chatServer.User;
+import com.example.chatServer.user.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
