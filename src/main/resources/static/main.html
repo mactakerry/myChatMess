@@ -19,11 +19,14 @@
             grid-template-columns: 400px 1fr;
             height: 100vh;
             color: var(--theme-text-color);
+
+            background-color: var(--theme-aside-bgcolor);
         }
 
         aside {
             background-color: var(--theme-aside-bgcolor);
             border-right: 1px solid #3a3a3a;
+            display: none;
         }
 
         .chatList {
@@ -43,7 +46,7 @@
 
         main {
             background-color: var(--theme-main-bgcolor);
-            display: grid;
+            display: none;
             grid-auto-rows: auto 1fr;
         }
 
@@ -93,10 +96,11 @@
 </head>
 <body>
     <aside>
+        <label>
+            <input class="searchInput" type="search" id="asideSearch">
+        </label>
+        <button class="searchButton" id="asideSearchButton">Искать</button>
         <div class="chatList">
-            <div class="chatInf">awdawd</div>
-            <div class="chatInf">ddd</div>
-            <div class="chatInf">aaaa</div>
         </div>
     </aside>
     <main>
@@ -113,13 +117,32 @@
     </main>
 
 <script>
+    document.addEventListener('DOMContentLoaded', event => {
+        const username = localStorage.getItem('username');
+        const password = localStorage.getItem('password');
+
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({username: username, password: password}),
+        }).then(res => res.text())
+            .then(data => {
+                if (data === 'Success') {
+                    document.querySelector('aside').style.display = 'block';
+                    document.querySelector('main').style.display = 'grid';
+                }
+            })
+
+            .catch(err => alert(err));
+    })
+
     const titleChat = document.querySelector('.titleChat');
 
     const chatInput = document.querySelector('.chatInput');
 
     let currentChat = document.querySelector('.chatInf');
-
-    titleChat.textContent = currentChat.textContent;
 
     document.querySelector('.chatList').addEventListener('click', (event) => {
         if (!event.target.classList.contains('chatInf')) {
@@ -150,6 +173,36 @@
             .catch(err => console.log(err));
     }
 
+    document.getElementById('asideSearchButton').addEventListener('click', () => {
+        const searchValue = document.getElementById('asideSearch').value;
+
+        const chatInfs = document.querySelectorAll('.chatInf');
+        for (const chat of chatInfs) {
+            if (chat.textContent === searchValue) {
+                titleChat.textContent = chat.textContent;
+                currentChat = chat;
+                return;
+            }
+        }
+
+        fetch('/searchUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({username: searchValue})
+        }).then(res => res.text()).then(data => {
+            if (data === 'Success') {
+                const chatInf = document.createElement('div');
+                chatInf.classList.add('chatInf');
+                chatInf.textContent = searchValue;
+
+                document.querySelector('.chatList').appendChild(chatInf);
+            }
+
+            alert(data);
+        }).catch(err => alert(err));
+    })
 </script>
 </body>
 </html>

@@ -88,7 +88,7 @@
       }
 
       const username = document.getElementById('username').value;
-      fetch('/registration', {
+      fetch('/reg', {
           method: 'post',
           headers: {
               'Content-Type': 'application/json'
@@ -99,7 +99,7 @@
               alert(data);
           })
           .catch(error => {
-              alert('Что то пошло не так');
+              alert(error);
           })
   });
 
