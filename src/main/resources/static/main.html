@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@6.1.2/bundles/stomp.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
     <link rel="stylesheet" href="mainStyle.css">
 </head>
@@ -30,110 +30,141 @@
         </div>
     </main>
 
-<script>
-    document.addEventListener('DOMContentLoaded', event => {
-        const username = localStorage.getItem('username');
-        const password = localStorage.getItem('password');
+    <script>
+        let stompClient = null;
+        let currentChat = null;
+        const titleChat = document.querySelector('.titleChat');
+        const chatInput = document.querySelector('.chatInput');
 
-        fetch('/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({username: username, password: password}),
-        }).then(res => res.text())
-            .then(data => {
-                if (data === 'Success') {
-                    document.querySelector('aside').style.display = 'block';
-                    document.querySelector('main').style.display = 'grid';
-                }
+        document.addEventListener('DOMContentLoaded', event => {
+            const username = localStorage.getItem('username');
+            const password = localStorage.getItem('password');
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password}),
             })
+                .then(res => res.text())
+                .then(data => {
+                    if (data === 'Success') {
+                        document.querySelector('aside').style.display = 'block';
+                        document.querySelector('main').style.display = 'grid';
 
-            .catch(err => alert(err));
+                        // Пробуем найти первый чат после авторизации
+                        const firstChat = document.querySelector('.chatInf');
+                        if (firstChat) {
+                            selectChat(firstChat);
+                        }
+                    }
+                })
+                .catch(err => console.error('Login error:', err));
+        });
 
+        function selectChat(chatElement) {
+            if (!chatElement) return;
 
-    })
-
-
-    const titleChat = document.querySelector('.titleChat');
-
-    const chatInput = document.querySelector('.chatInput');
-
-    let currentChat = document.querySelector('.chatInf');
-
-    document.querySelector('.chatList').addEventListener('click', (event) => {
-        if (!event.target.classList.contains('chatInf')) {
-            return;
+            titleChat.textContent = chatElement.textContent;
+            currentChat = chatElement;
+            document.querySelector('.chat').innerHTML = '';
+            connect(chatElement.dataset.chatId);
         }
 
-        titleChat.textContent = event.target.textContent;
-        currentChat = event.target;
-    })
+        document.querySelector('.chatList').addEventListener('click', (event) => {
+            if (event.target.classList.contains('chatInf')) {
+                selectChat(event.target);
+            }
+        });
 
-    document.querySelector('.sendMessageButton').addEventListener('click', () => {
-        const message = chatInput.value;
-        sendMessage(message);
-    })
-
-    function sendMessage(message) {
-        console.log(currentChat.dataset.chatId)
-        fetch('/send', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({content: message, sender: localStorage.getItem('username'), chatId: currentChat.dataset.chatId})
-        })
-            .then(res => res.text())
-            .then(data => {
-                alert(data);
-            })
-            .catch(err => console.log(err));
-    }
-
-    document.getElementById('asideSearchButton').addEventListener('click', async () => {
-        const searchValue = document.getElementById('asideSearch').value;
-
-        const chatInfs = document.querySelectorAll('.chatInf');
-        for (const chat of chatInfs) {
-            if (chat.textContent === searchValue) {
-                titleChat.textContent = chat.textContent;
-                currentChat = chat;
+        document.querySelector('.sendMessageButton').addEventListener('click', () => {
+            if (!currentChat || !currentChat.dataset.chatId) {
+                alert("Сначала выберите чат!");
                 return;
             }
-        }
 
-        await fetch('/searchUser', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({username: searchValue})
-        }).then(res => res.text()).then(async data => {
-            if (data === 'Success') {
-                let chatId;
-                await fetch('/grChat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain'
-                    },
-                    body: searchValue
-                }).then(res => res.text()).then(data => {
-                    console.log(data + ' DATA');
-                    chatId = data;
-                })
-                console.log(chatId);
-                const chatInf = document.createElement('div');
-                chatInf.classList.add('chatInf');
-                chatInf.textContent = searchValue;
-                chatInf.setAttribute('data-chat-id', chatId);
+            const message = chatInput.value.trim();
+            if (!message) return;
 
-                document.querySelector('.chatList').appendChild(chatInf);
+            stompClient.send("/app/send", {}, JSON.stringify({
+                content: message,
+                chatId: parseInt(currentChat.dataset.chatId),
+                sender: localStorage.getItem('username')
+            }));
+
+            chatInput.value = '';
+        });
+
+        document.getElementById('asideSearchButton').addEventListener('click', async () => {
+            const searchValue = document.getElementById('asideSearch').value.trim();
+            if (!searchValue) return;
+
+            // Поиск существующего чата
+            const chatInfs = document.querySelectorAll('.chatInf');
+            for (const chat of chatInfs) {
+                if (chat.textContent === searchValue) {
+                    selectChat(chat);
+                    return;
+                }
             }
 
-            alert(data);
-        }).catch(err => alert(err));
-    })
-</script>
+            // Создание нового чата
+            try {
+                const userRes = await fetch('/searchUser', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: searchValue})
+                });
+
+                if (await userRes.text() === 'Success') {
+                    const chatRes = await fetch('/grChat', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'text/plain'},
+                        body: searchValue
+                    });
+
+                    const chatId = await chatRes.json();
+                    const chatInf = document.createElement('div');
+                    chatInf.classList.add('chatInf');
+                    chatInf.textContent = searchValue;
+                    chatInf.dataset.chatId = chatId;
+                    document.querySelector('.chatList').appendChild(chatInf);
+                    selectChat(chatInf);
+                }
+            } catch (err) {
+                console.error('Search error:', err);
+                alert('Ошибка поиска');
+            }
+        });
+
+        const connect = (chatId) => {
+            if (stompClient && stompClient.connected) {
+                stompClient.disconnect();
+            }
+
+            const socket = new SockJS('/ws/chat');
+            stompClient = Stomp.over(socket);
+
+            stompClient.debug = (str) => console.log('STOMP ПЗДЕЦ:', str);
+
+            stompClient.connect({}, () => {
+                console.log(`Подключено к чату ${chatId}`);
+
+                stompClient.subscribe(`/topic/chat${chatId}`, (message) => {
+                    const msg = JSON.parse(message.body);
+                    addMessageToChat(msg.content, msg.sender);
+                });
+            }, (error) => {
+                console.error('Ошибка подключения:', error);
+            });
+        };
+
+        const addMessageToChat = (content, sender) => {
+            const chatContainer = document.querySelector('.chat');
+            const msgElement = document.createElement('div');
+            msgElement.innerHTML = `<b>${sender}:</b> ${content}`;
+            chatContainer.appendChild(msgElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
 </body>
 </html>
