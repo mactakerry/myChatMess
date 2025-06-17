@@ -34,5 +34,9 @@ public class Chat {
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> messages = new ArrayList<>();
 
+    public Chat(String name) {
+        this.name = name;
+    }
+
     public Chat() {}
 }

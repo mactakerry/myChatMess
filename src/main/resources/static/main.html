@@ -3,96 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <style>
-        :root {
-            --theme-text-color: white;
-            --theme-aside-bgcolor: #212121;
-            --theme-main-bgcolor: black;
-        }
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@6.1.2/bundles/stomp.umd.min.js"></script>
 
-        html {
-            font-family: sans-serif;
-        }
-        body {
-            margin: 0;
-            display: grid;
-            grid-template-columns: 400px 1fr;
-            height: 100vh;
-            color: var(--theme-text-color);
-
-            background-color: var(--theme-aside-bgcolor);
-        }
-
-        aside {
-            background-color: var(--theme-aside-bgcolor);
-            border-right: 1px solid #3a3a3a;
-            display: none;
-        }
-
-        .chatList {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chatInf {
-            padding: 30px;
-            border-radius: 20px;
-        }
-
-        .chatInf:hover {
-            background-color: gray;
-            cursor: pointer;
-        }
-
-        main {
-            background-color: var(--theme-main-bgcolor);
-            display: none;
-            grid-auto-rows: auto 1fr;
-        }
-
-        .titleChat {
-            padding: 20px;
-            background-color: var(--theme-aside-bgcolor);
-
-        }
-
-        .chatContainer {
-            border: 1px solid var(--theme-text-color);
-            display: grid;
-            grid-template-rows: 1fr auto;
-            justify-content: center;
-            padding-bottom: 20px;
-            gap: 10px;
-        }
-
-        .chat {
-            width: 700px;
-            border: 1px solid white;
-            border-bottom: 1px solid #3a3a3a;
-        }
-
-        .sendMessage {
-            background-color: var(--theme-aside-bgcolor);
-            border-radius: 50px;
-            padding-left: 40px;
-        }
-
-        .chatInput {
-            border: none;
-            padding: 20px;
-            background-color: var(--theme-aside-bgcolor);
-            color: var(--theme-text-color);
-            font-size: 1rem;
-        }
-
-        .chatInput:focus {
-            outline: none;
-        }
-
-        .sendMessageButton {
-            border-radius: 100px;
-        }
-    </style>
+    <link rel="stylesheet" href="mainStyle.css">
 </head>
 <body>
     <aside>
@@ -136,7 +50,10 @@
             })
 
             .catch(err => alert(err));
+
+
     })
+
 
     const titleChat = document.querySelector('.titleChat');
 
@@ -159,12 +76,13 @@
     })
 
     function sendMessage(message) {
-        fetch('http://localhost:8080/send', {
+        console.log(currentChat.dataset.chatId)
+        fetch('/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ text: message, sender: 'User', recipient: currentChat.textContent})
+            body: JSON.stringify({content: message, sender: localStorage.getItem('username'), chatId: currentChat.dataset.chatId})
         })
             .then(res => res.text())
             .then(data => {
@@ -173,7 +91,7 @@
             .catch(err => console.log(err));
     }
 
-    document.getElementById('asideSearchButton').addEventListener('click', () => {
+    document.getElementById('asideSearchButton').addEventListener('click', async () => {
         const searchValue = document.getElementById('asideSearch').value;
 
         const chatInfs = document.querySelectorAll('.chatInf');
@@ -185,17 +103,30 @@
             }
         }
 
-        fetch('/searchUser', {
+        await fetch('/searchUser', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({username: searchValue})
-        }).then(res => res.text()).then(data => {
+        }).then(res => res.text()).then(async data => {
             if (data === 'Success') {
+                let chatId;
+                await fetch('/grChat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    },
+                    body: searchValue
+                }).then(res => res.text()).then(data => {
+                    console.log(data + ' DATA');
+                    chatId = data;
+                })
+                console.log(chatId);
                 const chatInf = document.createElement('div');
                 chatInf.classList.add('chatInf');
                 chatInf.textContent = searchValue;
+                chatInf.setAttribute('data-chat-id', chatId);
 
                 document.querySelector('.chatList').appendChild(chatInf);
             }

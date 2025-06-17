@@ -1,6 +1,7 @@
 package com.example.chatServer.Message;
 
 import com.example.chatServer.chat.Chat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,11 +19,22 @@ public class Message {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    private LocalDateTime sentAt = LocalDateTime.now();
+    @Column(columnDefinition = "TIME")
+    @JsonIgnore
+    private LocalDateTime time = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
+
+    @Column(nullable = false)
+    private String sender;
+
+    public Message(String content, Chat chat, String sender) {
+        this.content = content;
+        this.chat = chat;
+        this.sender = sender;
+    }
 
     public Message() {}
 
