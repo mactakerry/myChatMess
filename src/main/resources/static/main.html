@@ -82,7 +82,7 @@
                 return;
             }
 
-            const message = chatInput.value.trim();
+            const message = chatInput.value;
             if (!message) return;
 
             stompClient.send("/app/send", {}, JSON.stringify({
@@ -116,10 +116,11 @@
                 });
 
                 if (await userRes.text() === 'Success') {
+                    const names = [localStorage.getItem('username'), searchValue];
                     const chatRes = await fetch('/grChat', {
                         method: 'POST',
-                        headers: {'Content-Type': 'text/plain'},
-                        body: searchValue
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(names)
                     });
 
                     const chatId = await chatRes.json();

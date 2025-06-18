@@ -23,19 +23,21 @@ public class Chat {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToMany
-    @JoinTable(
-            name = "chat_participants",
-            joinColumns = @JoinColumn(name = "chat_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private List<User> participants = new ArrayList<>();
+    @Column
+    private long userId1;
+
+    @Column
+    private long userId2;
+
+    private boolean isGroupChat = false;
 
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> messages = new ArrayList<>();
 
-    public Chat(String name) {
-        this.name = name;
+    public Chat(User u1, User u2) {
+        userId1 = u1.getId();
+        userId2 = u2.getId();
+        name = u1.getUsername() + "-" + u2.getUsername();
     }
 
     public Chat() {}

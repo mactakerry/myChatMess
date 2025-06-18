@@ -4,6 +4,7 @@ import com.example.chatServer.chat.Chat;
 import com.example.chatServer.chat.ChatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,21 +24,24 @@ public class MessageController {
     @Autowired
     private ChatRepository chatRepository;
 
-    @PostMapping("/send")
-    public ResponseEntity<String> sendMessage(@RequestBody MessageDto messageDto) {
-        System.out.println("MESSSSSSSSSSSSSSSSSSSSSSSS " + messageDto.getContent() + " " + messageDto.getChatId());
+    @MessageMapping("/send")
+    public void handleMessage(MessageDto messageDto) {
+        System.out.println("Received via WebSocket: " + messageDto);
 
         Optional<Chat> chat = chatRepository.findById(messageDto.getChatId());
-        if (!chat.isPresent()) {
-            return ResponseEntity.badRequest().body("Chat not found");
-        }
+        if (chat.isEmpty()) return;
 
-        Message message = new Message(messageDto.getContent(), chat.get(), messageDto.getSender());
+        Message message = new Message(
+                messageDto.getContent(),
+                chat.get(),
+                messageDto.getSender()
+        );
 
         messageService.sendMessage(message);
 
-        messagingTemplate.convertAndSend("/topic/chat" + messageDto.getChatId(), messageDto);
-
-        return ResponseEntity.ok("Success");
+        messagingTemplate.convertAndSend(
+                "/topic/chat" + messageDto.getChatId(),
+                messageDto
+        );
     }
 }
