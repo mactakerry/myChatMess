@@ -7,13 +7,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
     <link rel="stylesheet" href="mainStyle.css">
+
+
 </head>
 <body>
     <aside>
-        <label>
-            <input class="searchInput" type="search" id="asideSearch">
-        </label>
-        <button class="searchButton" id="asideSearchButton">Искать</button>
+        <div class="aside-header">
+            <button class="menuButton"> <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="30" height="30" viewBox="0,0,256,256">
+                <g fill="#ffffff" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="none" font-weight="none" font-size="none" text-anchor="none" style="mix-blend-mode: normal"><g transform="scale(5.12,5.12)"><path d="M0,9v2h50v-2zM0,24v2h50v-2zM0,39v2h50v-2z"></path></g></g>
+            </svg>
+            </button>
+
+            <form id="asideSearchForm">
+                <input class="searchInput" type="search" id="asideSearch" placeholder="Search...">
+            </form>
+        </div>
+
         <div class="chatList">
         </div>
     </aside>
@@ -22,10 +31,10 @@
         <div class="chatContainer">
             <div class="chat"></div>
             <div class="sendMessage">
-                <label>
+                <form id="sendMessageForm">
                     <input type="text" class="chatInput" placeholder="Message">
-                </label>
-                <button class="sendMessageButton">SEND</button>
+                    <button class="sendMessageButton" type="submit"><img src="assets/send_xxyrub3nsyie.svg" width="32" height="32" alt=""></button>
+                </form>
             </div>
         </div>
     </main>
@@ -76,7 +85,8 @@
             }
         });
 
-        document.querySelector('.sendMessageButton').addEventListener('click', () => {
+        document.getElementById('sendMessageForm').addEventListener('submit', (event) => {
+            event.preventDefault();
             if (!currentChat || !currentChat.dataset.chatId) {
                 alert("Сначала выберите чат!");
                 return;

@@ -20,7 +20,39 @@ body {
 aside {
     background-color: var(--theme-aside-bgcolor);
     border-right: 1px solid #3a3a3a;
-    display: none;
+    display: block;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.aside-header {
+    margin-top: 5px;
+    padding: 10px 10px 5px 5px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+}
+
+.menuButton {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+#asideSearchForm {
+    background-color: #2c2c2c;
+    border-radius: 50px;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.searchInput {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    padding: 15px;
+    font-size: 1rem;
+    color: var(--theme-text-color);
 }
 
 .chatList {
@@ -40,7 +72,7 @@ aside {
 
 main {
     background-color: var(--theme-main-bgcolor);
-    display: none;
+    display: grid;
     grid-auto-rows: auto 1fr;
 }
 
@@ -51,7 +83,6 @@ main {
 }
 
 .chatContainer {
-    border: 1px solid var(--theme-text-color);
     display: grid;
     grid-template-rows: 1fr auto;
     justify-content: center;
@@ -61,19 +92,23 @@ main {
 
 .chat {
     width: 700px;
-    border: 1px solid white;
     border-bottom: 1px solid #3a3a3a;
 }
 
 .sendMessage {
-    background-color: var(--theme-aside-bgcolor);
     border-radius: 50px;
-    padding-left: 40px;
+}
+
+#sendMessageForm {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
 }
 
 .chatInput {
+    border-radius: 50px;
     border: none;
-    padding: 20px;
+    padding: 15px;
     background-color: var(--theme-aside-bgcolor);
     color: var(--theme-text-color);
     font-size: 1rem;
@@ -85,4 +120,25 @@ main {
 
 .sendMessageButton {
     border-radius: 100px;
+    border: none;
+    padding: 15px;
+    background-color: var(--theme-aside-bgcolor);
+}
+
+.sendMessageButton:hover {
+    background-color: mediumslateblue;
+    cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+    body {
+        grid-template-columns: auto auto;
+    }
+    .chat {
+        width: 500px;
+    }
+}
+
+@media (max-width: 800px) {
+
 }
