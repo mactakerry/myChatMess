@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 @RestController
-public class ChatController {
+public class GrController {
     @Autowired
     ChatRepository chatRepository;
 

@@ -50,6 +50,7 @@
         let currentChat = null;
         const titleChat = document.querySelector('.titleChat');
         const chatInput = document.querySelector('.chatInput');
+        const chatList = document.querySelector('.chatList');
 
         const main = document.querySelector('main');
         const  aside = document.querySelector('aside');
@@ -97,15 +98,29 @@
                 body: JSON.stringify({username, password}),
             })
                 .then(res => res.text())
-                .then(data => {
+                .then(async data => {
                     if (data === 'Success') {
                         updateLayout();
 
-                        // Пробуем найти первый чат после авторизации
-                        const firstChat = document.querySelector('.chatInf');
-                        if (firstChat) {
-                            selectChat(firstChat);
-                        }
+                        await fetch('/getAllUserChats', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(localStorage.getItem('username'))
+                        }).then(res => {
+                            if (!res.ok) {
+                                console.log('ERROR: ' + res);
+                            }
+
+                            return res.json();
+                        }).then(chats => {
+                            chats.forEach(chat => {
+                                const chatElement = document.createElement('div');
+                                chatElement.classList.add('chatInf');
+                                chatElement.textContent = chat.name;
+                                chatElement.dataset.chatId = chat.id;
+                                chatList.appendChild(chatElement);
+                            })
+                        });
                     }
                 })
                 .catch(err => console.error('Login error:', err));
