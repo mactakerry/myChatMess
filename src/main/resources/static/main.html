@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Title</title>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
@@ -26,8 +27,13 @@
         <div class="chatList">
         </div>
     </aside>
+
     <main>
-        <div class="titleChat"></div>
+        <div class="titleContainer">
+            <button class="mobileBackButton"><img src="assets/vlevo_tcmsdxndweoz.svg" width="32" height="32" alt="BACK"></button>
+            <div class="titleChat"></div>
+        </div>
+
         <div class="chatContainer">
             <div class="chat"></div>
             <div class="sendMessage">
@@ -45,7 +51,43 @@
         const titleChat = document.querySelector('.titleChat');
         const chatInput = document.querySelector('.chatInput');
 
+        const main = document.querySelector('main');
+        const  aside = document.querySelector('aside');
+
+        function updateAppHeight() {
+            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+        }
+
+        window.addEventListener('resize', () => {
+            updateLayout();
+            updateAppHeight();
+        });
+        window.addEventListener('DOMContentLoaded', updateAppHeight);
+        window.addEventListener('orientationchange', updateAppHeight);
+
+        updateAppHeight();
+
+        function updateLayout() {
+            const width = window.innerWidth;
+            if (width > 800) {
+                // Десктопный режим
+                aside.style.display = 'block';
+                main.style.display = 'grid';
+            } else {
+                // Мобильный режим
+                if (currentChat) {
+                    aside.style.display = 'none';
+                    main.style.display = 'grid';
+                } else {
+                    aside.style.display = 'block';
+                    main.style.display = 'none';
+                }
+            }
+        }
+
+
         document.addEventListener('DOMContentLoaded', event => {
+
             const username = localStorage.getItem('username');
             const password = localStorage.getItem('password');
 
@@ -57,8 +99,7 @@
                 .then(res => res.text())
                 .then(data => {
                     if (data === 'Success') {
-                        document.querySelector('aside').style.display = 'block';
-                        document.querySelector('main').style.display = 'grid';
+                        updateLayout();
 
                         // Пробуем найти первый чат после авторизации
                         const firstChat = document.querySelector('.chatInf');
@@ -77,7 +118,11 @@
             currentChat = chatElement;
             document.querySelector('.chat').innerHTML = '';
             connect(chatElement.dataset.chatId);
+
+            updateLayout();
         }
+
+
 
         document.querySelector('.chatList').addEventListener('click', (event) => {
             if (event.target.classList.contains('chatInf')) {
@@ -104,7 +149,8 @@
             chatInput.value = '';
         });
 
-        document.getElementById('asideSearchButton').addEventListener('click', async () => {
+        document.getElementById('asideSearchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
             const searchValue = document.getElementById('asideSearch').value.trim();
             if (!searchValue) return;
 
@@ -176,6 +222,11 @@
             chatContainer.appendChild(msgElement);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
+
+        document.querySelector('.mobileBackButton').addEventListener('click', (event) => {
+            currentChat = null;
+            updateLayout();
+        })
     </script>
 </body>
 </html>
