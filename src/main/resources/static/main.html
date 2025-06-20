@@ -51,6 +51,7 @@
         const titleChat = document.querySelector('.titleChat');
         const chatInput = document.querySelector('.chatInput');
         const chatList = document.querySelector('.chatList');
+        const chat = document.querySelector('.chat');
 
         const main = document.querySelector('main');
         const  aside = document.querySelector('aside');
@@ -126,12 +127,22 @@
                 .catch(err => console.error('Login error:', err));
         });
 
-        function selectChat(chatElement) {
+        async function selectChat(chatElement) {
             if (!chatElement) return;
 
             titleChat.textContent = chatElement.textContent;
             currentChat = chatElement;
-            document.querySelector('.chat').innerHTML = '';
+            chat.innerHTML = '';
+            await fetch('/getAllMessByChatId', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(chatElement.dataset.chatId),
+            }).then(res => res.json()).then(messages => {
+                console.log(messages);
+                messages.forEach(message => {
+                    addMessageToChat(message.content, message.sender);
+                })
+            })
             connect(chatElement.dataset.chatId);
 
             updateLayout();
@@ -231,11 +242,21 @@
         };
 
         const addMessageToChat = (content, sender) => {
-            const chatContainer = document.querySelector('.chat');
+            const msg = document.createElement('div');
             const msgElement = document.createElement('div');
-            msgElement.innerHTML = `<b>${sender}:</b> ${content}`;
-            chatContainer.appendChild(msgElement);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            msgElement.style.display = 'inline-block';
+            msgElement.style.borderRadius = '20px';
+            msgElement.style.backgroundColor = '#212121';
+            msgElement.style.padding = '15px';
+            msgElement.innerHTML = `${content}`;
+            if (sender === localStorage.getItem('username')) {
+                msgElement.style.backgroundColor = 'mediumslateblue';
+                msg.style.textAlign = 'right';
+            }
+            msg.style.margin = '10px';
+            msg.appendChild(msgElement);
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
         }
 
         document.querySelector('.mobileBackButton').addEventListener('click', (event) => {

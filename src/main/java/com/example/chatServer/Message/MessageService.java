@@ -4,6 +4,8 @@ import com.example.chatServer.chat.ChatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class MessageService {
     @Autowired
@@ -14,5 +16,9 @@ public class MessageService {
 
     public void sendMessage(Message message) {
         messageRepository.save(message);
+    }
+
+    public List<MessageDTO> getAllMessByChatId(long id) {
+        return messageRepository.findByChatIdOrderByTimeAsc(id);
     }
 }
