@@ -14,7 +14,6 @@ public class SearchUserController {
 
     @PostMapping("/searchUser")
     public ResponseEntity<String> searchUser(@RequestBody User user) {
-        System.out.println(user.getUsername() + "SEARCH SEARCH SEARCH");
         if (userRepository.existsByUsername(user.getUsername())) {
             return ResponseEntity.ok("Success");
         }

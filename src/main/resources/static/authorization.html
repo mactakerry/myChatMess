@@ -75,23 +75,31 @@
             }
         });
 
-        document.getElementById('myForm').addEventListener('submit', function(e) {
+        document.getElementById('myForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            fetch('/login', {
+            const res = await fetch('/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({username: document.getElementById('username').value, password: document.getElementById('password').value})
-            }).then(res => res.text())
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            })
+
+            if (!res.ok) {
+                alert("ошибка логина");
+                return;
+            }
+
+
+            await res.text()
                 .then(data => {
-                    alert(data);
-                    if (data === 'Success') {
-                        localStorage.setItem('username', document.getElementById('username').value);
-                        localStorage.setItem('password', document.getElementById('password').value);
-                        window.location.href = '/main.html';
-                    }
+                    localStorage.setItem('token', data);
+                    localStorage.setItem('username', document.getElementById('username').value);
+                    window.location.href = '/main.html';
                 })
 
                 .catch(err => alert(err));

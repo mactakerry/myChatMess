@@ -1,0 +1,72 @@
+package com.example.chatServer.authorization;
+
+import com.example.chatServer.token.Token;
+import com.example.chatServer.token.TokenRepository;
+import com.example.chatServer.token.TokenService;
+import com.example.chatServer.user.User;
+import com.example.chatServer.user.UserDTO;
+import com.example.chatServer.user.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Optional;
+
+@RestController
+public class AuthorizationController {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private TokenService tokenService;
+
+    @Autowired
+    private TokenRepository tokenRepository;
+
+    @PostMapping("/reg")
+    public ResponseEntity<String> creteUser(@RequestBody User user) {
+        if (userRepository.existsByUsername(user.getUsername())) {
+            return ResponseEntity.ok("Please select another username");
+        }
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Success");
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody UserDTO userDTO) {
+        Optional<User> optionalUser = userRepository.findByUsername(userDTO.getUsername());
+
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password or wrong username");
+        }
+
+        User user = optionalUser.get();
+
+        if (userDTO.getPassword().equals(user.getPassword())) {
+            Token token = tokenService.generateToken(user.getId());
+            return ResponseEntity.ok(token.getName());
+        }
+
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password or wrong username");
+    }
+
+    @PostMapping("/loginWithToken")
+    public ResponseEntity<String> loginWithToken (@RequestBody String tokenName) {
+        Token token = tokenRepository.findByName(tokenName);
+
+        if (!tokenService.validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password or wrong username");
+        }
+
+        if (tokenService.isTimeExpiration(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password or wrong username");
+        }
+
+        return ResponseEntity.ok("Success");
+    }
+}

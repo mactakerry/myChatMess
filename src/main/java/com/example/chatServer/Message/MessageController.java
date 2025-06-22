@@ -49,4 +49,6 @@ public class MessageController {
         List<MessageDTO> messages = messageService.getAllMessByChatId(chatId);
         return ResponseEntity.ok(messages);
     }
+
+
 }

@@ -21,7 +21,6 @@ public class GrController {
 
     @PostMapping("/grChat")
     public ResponseEntity<Long> grChat(@RequestBody String[] names) {
-        System.out.println(Arrays.toString(names) + " !!!!!!!!!");
         User user1 = userRepository.findByUsername(names[0]).get();
         User user2 = userRepository.findByUsername(names[1]).get();
 

@@ -88,43 +88,48 @@
         }
 
 
-        document.addEventListener('DOMContentLoaded', event => {
+        document.addEventListener('DOMContentLoaded', async event => {
 
-            const username = localStorage.getItem('username');
-            const password = localStorage.getItem('password');
+            const token = localStorage.getItem('token');
 
-            fetch('/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username, password}),
-            })
-                .then(res => res.text())
-                .then(async data => {
-                    if (data === 'Success') {
-                        updateLayout();
+            try {
+                const response = await fetch('/loginWithToken', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'text/plain'},
+                    body: token
+                });
 
-                        await fetch('/getAllUserChats', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify(localStorage.getItem('username'))
-                        }).then(res => {
-                            if (!res.ok) {
-                                console.log('ERROR: ' + res);
-                            }
+                if (!response.ok) {
+                    throw new Error('Ошибка при логине с токеном');
+                }
 
-                            return res.json();
-                        }).then(chats => {
-                            chats.forEach(chat => {
-                                const chatElement = document.createElement('div');
-                                chatElement.classList.add('chatInf');
-                                chatElement.textContent = chat.name;
-                                chatElement.dataset.chatId = chat.id;
-                                chatList.appendChild(chatElement);
-                            })
-                        });
+                const data = await response.text();
+                updateLayout();
+
+                await fetch('/getAllUserChats', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(localStorage.getItem('username'))
+                }).then(res => {
+                    if (!res.ok) {
+                        console.log('ERROR: ' + res);
                     }
-                })
-                .catch(err => console.error('Login error:', err));
+
+                    return res.json();
+                }).then(chats => {
+                    chats.forEach(chat => {
+                        const chatElement = document.createElement('div');
+                        chatElement.classList.add('chatInf');
+                        chatElement.textContent = chat.name;
+                        chatElement.dataset.chatId = chat.id;
+                        chatList.appendChild(chatElement);
+                    })
+                });
+            } catch (err) {
+                alert(err);
+                window.location.href = '/authorization.html';
+            }
+
         });
 
         async function selectChat(chatElement) {

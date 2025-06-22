@@ -21,7 +21,6 @@ public class getAllUserChatsController {
 
     @PostMapping("/getAllUserChats")
     public ResponseEntity<?> getAllUserChats(@RequestBody UserDTO userDTO) {
-        System.out.println(userDTO.getUsername() + " ALALALALALALALALAL");
 
         if (userDTO.getUsername() == null) {
             return ResponseEntity.ofNullable("Призраки у нас не хранятся ");
@@ -44,7 +43,6 @@ public class getAllUserChatsController {
             User chatUser1 = userRepository.findById(chatDTO.getUserId1()).get();
             if ((userDTO.getUsername().equals(chatUser1.getUsername()))) {
                 chatDTO.setName(userRepository.findById(chatDTO.getUserId2()).get().getUsername());
-                System.out.println(chatUser1.getUsername() + ".  DTO: " + userDTO.getUsername());
 
                 continue;
             }
