@@ -1,8 +1,9 @@
 package com.example.chatServer.chat;
 
+import com.example.chatServer.token.Token;
+import com.example.chatServer.token.TokenService;
 import com.example.chatServer.user.User;
-import com.example.chatServer.user.UserDTO;
-import com.example.chatServer.user.UserRepository;
+import com.example.chatServer.user.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,18 +18,22 @@ public class getAllUserChatsController {
     private ChatRepository chatRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
+
+    @Autowired
+    private TokenService tokenService;
 
     @PostMapping("/getAllUserChats")
-    public ResponseEntity<?> getAllUserChats(@RequestBody UserDTO userDTO) {
-
-        if (userDTO.getUsername() == null) {
-            return ResponseEntity.ofNullable("Призраки у нас не хранятся ");
+    public ResponseEntity<?> getAllUserChats(@RequestBody String tokenName) {
+        Token token = tokenService.findByName(tokenName);
+        if (!tokenService.validateToken(token)) {
+            return ResponseEntity.status(401).build();
         }
-        User user = userRepository.findByUsername(userDTO.getUsername()).orElse(null);
+
+        User user = userService.getUserById(token.getUserId());
 
         if (user == null) {
-            return ResponseEntity.ofNullable("Кто это бля " + userDTO.getUsername());
+            return ResponseEntity.ofNullable("Кто ты бля ");
         }
         List<ChatDTO> chats1 = chatRepository.findAllByUserId1(user.getId());
         List<ChatDTO> chats2 = chatRepository.findAllByUserId2(user.getId());
@@ -40,9 +45,9 @@ public class getAllUserChatsController {
                 continue;
             }
 
-            User chatUser1 = userRepository.findById(chatDTO.getUserId1()).get();
-            if ((userDTO.getUsername().equals(chatUser1.getUsername()))) {
-                chatDTO.setName(userRepository.findById(chatDTO.getUserId2()).get().getUsername());
+            User chatUser1 = userService.getUserById(chatDTO.getUserId1());
+            if ((user.getUsername().equals(chatUser1.getUsername()))) {
+                chatDTO.setName(userService.getUserById(chatDTO.getUserId2()).getUsername());
 
                 continue;
             }

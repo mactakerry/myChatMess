@@ -108,8 +108,8 @@
 
                 await fetch('/getAllUserChats', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(localStorage.getItem('username'))
+                    headers: {'Content-Type': 'text/plain'},
+                    body: token
                 }).then(res => {
                     if (!res.ok) {
                         console.log('ERROR: ' + res);

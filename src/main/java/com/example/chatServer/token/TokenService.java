@@ -42,10 +42,12 @@ public class TokenService {
     }
 
     public boolean isTimeExpiration(Token token) {
-        if (token == null) {
-            return true;
-        }
+        if (token == null) return true;
+        long daysPassed = ChronoUnit.DAYS.between(token.getDate(), LocalDate.now());
+        return daysPassed > 30;
+    }
 
-        return LocalDate.now().until(token.getDate(), ChronoUnit.DAYS) > 30;
+    public Token findByName(String name) {
+        return tokenRepository.findByName(name);
     }
 }

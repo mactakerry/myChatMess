@@ -98,7 +98,6 @@
             await res.text()
                 .then(data => {
                     localStorage.setItem('token', data);
-                    localStorage.setItem('username', document.getElementById('username').value);
                     window.location.href = '/main.html';
                 })
 
