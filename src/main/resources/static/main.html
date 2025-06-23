@@ -47,6 +47,8 @@
 
     <script>
         let stompClient = null;
+        let currentSubscription = null;
+
         let currentChat = null;
         const titleChat = document.querySelector('.titleChat');
         const chatInput = document.querySelector('.chatInput');
@@ -66,6 +68,12 @@
         });
         window.addEventListener('DOMContentLoaded', updateAppHeight);
         window.addEventListener('orientationchange', updateAppHeight);
+
+        window.addEventListener('beforeunload', () => {
+            if (stompClient && stompClient.connected) {
+                stompClient.disconnect();
+            }
+        });
 
         updateAppHeight();
 
@@ -138,17 +146,36 @@
             titleChat.textContent = chatElement.textContent;
             currentChat = chatElement;
             chat.innerHTML = '';
+
             await fetch('/getAllMessByChatId', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(chatElement.dataset.chatId),
             }).then(res => res.json()).then(messages => {
-                console.log(messages);
                 messages.forEach(message => {
                     addMessageToChat(message.content, message.sender);
                 })
-            })
-            connect(chatElement.dataset.chatId);
+            });
+
+            try {
+                await connect();
+
+                if (currentSubscription) {
+                    currentSubscription.unsubscribe();
+                }
+
+                currentSubscription = stompClient.subscribe(
+                    `/topic/chat${chatElement.dataset.chatId}`,
+                    (message) => {
+                        const msg = JSON.parse(message.body);
+                        addMessageToChat(msg.content, msg.sender);
+                    }
+                );
+
+                console.log(`Подключено к чату ${chatElement.dataset.chatId}`);
+            } catch (error) {
+                console.error('Ошибка подключения:', error);
+            }
 
             updateLayout();
         }
@@ -224,27 +251,19 @@
             }
         });
 
-        const connect = (chatId) => {
-            if (stompClient && stompClient.connected) {
-                stompClient.disconnect();
-            }
+        const connect = async () => {
+            if (!stompClient) {
+                const socket = new SockJS('/ws/chat');
+                stompClient = Stomp.over(socket);
 
-            const socket = new SockJS('/ws/chat');
-            stompClient = Stomp.over(socket);
+                stompClient.debug = (str) => console.log('STOMP DEBUG:', str);
 
-            stompClient.debug = (str) => console.log('STOMP ПЗДЕЦ:', str);
-
-            stompClient.connect({}, () => {
-                console.log(`Подключено к чату ${chatId}`);
-
-                stompClient.subscribe(`/topic/chat${chatId}`, (message) => {
-                    const msg = JSON.parse(message.body);
-                    addMessageToChat(msg.content, msg.sender);
+                return new Promise((resolve, reject) => {
+                    stompClient.connect({}, () => resolve(), (error) => reject(error));
                 });
-            }, (error) => {
-                console.error('Ошибка подключения:', error);
-            });
-        };
+            }
+            return Promise.resolve();
+        }
 
         const addMessageToChat = (content, sender) => {
             const msg = document.createElement('div');

@@ -13,6 +13,7 @@ body {
     display: grid;
     grid-template-columns: 400px 1fr;
     height: var(--app-height);
+    max-height: 100vh;
     color: var(--theme-text-color);
 
     background-color: var(--theme-aside-bgcolor);
@@ -22,6 +23,7 @@ aside {
     background-color: var(--theme-aside-bgcolor);
     border-right: 1px solid #3a3a3a;
     display: block;
+    max-height: 100vh;
     overflow-y: auto;
 }
 
@@ -71,6 +73,7 @@ aside {
 }
 
 main {
+    max-height: 100vh;
     background-color: var(--theme-main-bgcolor);
     display: grid;
     grid-auto-rows: auto 1fr;
@@ -102,6 +105,7 @@ main {
     padding-bottom: 20px;
     gap: 10px;
     min-height: 0;
+    max-height: 100vh;
 }
 
 .chat {
@@ -109,6 +113,7 @@ main {
     border-bottom: 1px solid #3a3a3a;
     min-height: 0;
     overflow-y: auto;
+    max-height: calc(var(--app-height) - 150px);
 
 }
 
@@ -173,7 +178,6 @@ main {
 
     .chat {
         width: 100%;
-        max-height: calc(var(--app-height) - 150px);
     }
 
 }
