@@ -41,10 +41,35 @@ aside {
     outline: none;
 }
 
+.menuButton:hover {
+    cursor: pointer;
+}
+
 .menu {
     display: none;
     position: fixed;
-    width: 70%;
+    grid-auto-rows: auto;
+    width: 250px;
+    top: 70px;
+    left: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--theme-main-bgcolor);
+    background-color: var(--theme-aside-bgcolor);
+}
+
+.menuItem {
+    padding: 10px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.menuItem:hover {
+    background-color: var(--theme-main-bgcolor);
+}
+
+#createGroupChatForm {
+    display: none;
 }
 
 #asideSearchForm {

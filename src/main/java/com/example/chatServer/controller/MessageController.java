@@ -3,7 +3,7 @@ package com.example.chatServer.controller;
 import com.example.chatServer.model.entity.Message;
 import com.example.chatServer.model.dto.MessageDTO;
 import com.example.chatServer.sevice.MessageService;
-import com.example.chatServer.model.entity.Chat;
+import com.example.chatServer.model.chat.Chat;
 import com.example.chatServer.repository.ChatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

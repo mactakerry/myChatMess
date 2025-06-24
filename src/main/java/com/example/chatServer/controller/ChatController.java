@@ -1,7 +1,8 @@
 package com.example.chatServer.controller;
 
-import com.example.chatServer.model.entity.Chat;
+import com.example.chatServer.model.chat.Chat;
 import com.example.chatServer.model.dto.ChatDTO;
+import com.example.chatServer.model.dto.request.CreateGroupRequest;
 import com.example.chatServer.repository.ChatRepository;
 import com.example.chatServer.model.entity.Token;
 import com.example.chatServer.sevice.TokenService;
@@ -9,12 +10,15 @@ import com.example.chatServer.model.entity.User;
 import com.example.chatServer.repository.UserRepository;
 import com.example.chatServer.sevice.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 public class ChatController {
@@ -34,8 +38,10 @@ public class ChatController {
 
     @PostMapping("/grChat")
     public ResponseEntity<Long> grChat(@RequestBody String[] names) {
-        User user1 = userRepository.findByUsername(names[0]).get();
-        User user2 = userRepository.findByUsername(names[1]).get();
+        Token token = tokenService.findByName(names[0]);
+
+        User user1 = userService.getUserById(token.getUserId());
+        User user2 = userService.findByUserName(names[1]).get();
 
         Chat chat = chatRepository.findByUserId1AndUserId2(user1.getId(), user2.getId());
         if (chat == null) {
@@ -67,8 +73,10 @@ public class ChatController {
         }
         List<ChatDTO> chats1 = chatRepository.findAllByUserId1(user.getId());
         List<ChatDTO> chats2 = chatRepository.findAllByUserId2(user.getId());
+        List<ChatDTO> groupChats = chatRepository.findGroupChatsByParticipants(user);
 
         chats1.addAll(chats2);
+        chats1.addAll(groupChats);
 
         for (ChatDTO chatDTO:chats1) {
             if (chatDTO.isGroupChat()) {
@@ -88,5 +96,31 @@ public class ChatController {
         return ResponseEntity.ok(chats1);
     }
 
+    @PostMapping("/createGroup")
+    public ResponseEntity<Long> createGroup(@RequestBody CreateGroupRequest request) {
+        Token token = tokenService.findByName(request.getCreatorName());
+        User creator = userService.getUserById(token.getUserId());
+
+        System.out.println("DAWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW");
+
+        if (request.getParticipants().size() < 2) {
+            return ResponseEntity.badRequest().body(-1L);
+        }
+
+        Set<User> participants = new HashSet<>();
+        participants.add(creator);
+        for (String username : request.getParticipants()) {
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(-1L);
+            }
+            participants.add(user);
+        }
+
+        Chat groupChat = new Chat(request.getName(), participants, creator.getId());
+
+        chatRepository.save(groupChat);
+        return ResponseEntity.ok(groupChat.getId());
+    }
 
 }

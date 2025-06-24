@@ -24,10 +24,19 @@
             </form>
         </div>
         <div class="menu">
-            <div class="menuItem">
+            <div id="createGroupButton" class="menuItem">
                 create group chat
             </div>
         </div>
+
+        <form id="createGroupChatForm">
+            <label>
+                Name: <input id="groupNameInput" type="text" required>
+            </label>
+            <div class="addChatList"></div>
+            <button type="button" id="crGrChFormBackButton">back</button>
+            <button type="submit">create</button>
+        </form>
 
         <div class="chatList">
         </div>
@@ -63,9 +72,12 @@
         const main = document.querySelector('main');
         const  aside = document.querySelector('aside');
 
-        function updateAppHeight() {
-            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-        }
+        let menuToggle = false;
+        const menu = document.querySelector('.menu');
+        const asideHeader = document.querySelector('.aside-header');
+        const createGroupChatForm = document.getElementById('createGroupChatForm');
+        const addChatList = document.querySelector('.addChatList');
+
 
         window.addEventListener('resize', () => {
             updateLayout();
@@ -81,6 +93,10 @@
         });
 
         updateAppHeight();
+
+        function updateAppHeight() {
+            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+        }
 
         function updateLayout() {
             const width = window.innerWidth;
@@ -130,20 +146,47 @@
 
                     return res.json();
                 }).then(chats => {
+
                     chats.forEach(chat => {
                         const chatElement = document.createElement('div');
                         chatElement.classList.add('chatInf');
                         chatElement.textContent = chat.name;
                         chatElement.dataset.chatId = chat.id;
                         chatList.appendChild(chatElement);
+
+                        if (!chat.isGroupChat) {
+                            const chatElement2 = chatElement.cloneNode(true);
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            const label = document.createElement('label');
+                            label.appendChild(checkbox);
+                            chatElement2.appendChild(label);
+
+                            addChatList.appendChild(chatElement2);
+                        }
+
                     })
                 });
             } catch (err) {
                 alert(err);
-                window.location.href = '/authorization.html';
+               // window.location.href = '/authorization.html';
             }
 
         });
+
+        const connect = async () => {
+            if (!stompClient) {
+                const socket = new SockJS('/ws/chat');
+                stompClient = Stomp.over(socket);
+
+                stompClient.debug = (str) => console.log('STOMP DEBUG:', str);
+
+                return new Promise((resolve, reject) => {
+                    stompClient.connect({}, () => resolve(), (error) => reject(error));
+                });
+            }
+            return Promise.resolve();
+        }
 
         async function selectChat(chatElement) {
             if (!chatElement) return;
@@ -235,7 +278,7 @@
                 });
 
                 if (await userRes.text() === 'Success') {
-                    const names = [localStorage.getItem('username'), searchValue];
+                    const names = [localStorage.getItem('token'), searchValue];
                     const chatRes = await fetch('/grChat', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -255,20 +298,6 @@
                 alert('Ошибка поиска');
             }
         });
-
-        const connect = async () => {
-            if (!stompClient) {
-                const socket = new SockJS('/ws/chat');
-                stompClient = Stomp.over(socket);
-
-                stompClient.debug = (str) => console.log('STOMP DEBUG:', str);
-
-                return new Promise((resolve, reject) => {
-                    stompClient.connect({}, () => resolve(), (error) => reject(error));
-                });
-            }
-            return Promise.resolve();
-        }
 
         const addMessageToChat = (content, sender) => {
             const msg = document.createElement('div');
@@ -291,6 +320,69 @@
         document.querySelector('.mobileBackButton').addEventListener('click', (event) => {
             currentChat = null;
             updateLayout();
+        })
+
+
+
+
+        document.querySelector('.menuButton').addEventListener('click', (event) => {
+            if (menuToggle) {
+                menu.style.display = 'none';
+            } else {
+                menu.style.display = 'grid';
+            }
+
+            menuToggle = !menuToggle;
+        })
+
+        document.getElementById('createGroupButton').addEventListener('click', (event) => {
+            menuToggle = !menuToggle;
+            menu.style.display = 'none';
+            asideHeader.style.display = 'none';
+            chatList.style.display = 'none';
+            createGroupChatForm.style.display = 'block';
+        })
+
+        document.getElementById('crGrChFormBackButton').addEventListener('click', (event) => {
+            asideHeader.style.display = 'grid';
+            createGroupChatForm.style.display = 'none';
+            chatList.style.display = 'flex';
+        })
+
+        const groupNameInput = document.getElementById('groupNameInput');
+
+        createGroupChatForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const items = addChatList.querySelectorAll('.chatInf');
+            let participants = [];
+
+            items.forEach(item => {
+                const flag = item.querySelector('input[type="checkbox"]');
+
+                if (flag) {
+                    participants.push(item.textContent);
+                }
+            })
+
+            await fetch('/createGroup', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: groupNameInput.value, participants:participants, creatorName:localStorage.getItem('token')})
+            }).then(async response => {
+                return await response.json();
+            }).then(chatId => {
+                const chatInf = document.createElement('div');
+                chatInf.classList.add('chatInf');
+                chatInf.textContent = groupNameInput.value;
+                chatInf.dataset.chatId = chatId;
+                document.querySelector('.chatList').appendChild(chatInf);
+                selectChat(chatInf);
+            })
+
+            asideHeader.style.display = 'grid';
+            createGroupChatForm.style.display = 'none';
+            chatList.style.display = 'flex';
         })
     </script>
 </body>

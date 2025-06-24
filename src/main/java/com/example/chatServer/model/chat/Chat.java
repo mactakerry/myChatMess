@@ -1,11 +1,15 @@
-package com.example.chatServer.model.entity;
+package com.example.chatServer.model.chat;
 
+import com.example.chatServer.model.entity.Message;
+import com.example.chatServer.model.entity.User;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "chats")
@@ -29,6 +33,17 @@ public class Chat {
 
     private boolean isGroupChat = false;
 
+    @Column
+    private long creatorId;
+
+    @ManyToMany
+    @JoinTable(
+            name = "chat_participants",
+            joinColumns = @JoinColumn(name = "chat_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<User> participants = new HashSet<>();
+
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> messages = new ArrayList<>();
 
@@ -36,6 +51,14 @@ public class Chat {
         userId1 = u1.getId();
         userId2 = u2.getId();
         name = u1.getUsername() + "-" + u2.getUsername();
+    }
+
+    public Chat(String name, Set<User> participants, long creatorId) {
+        this.name = name;
+        this.participants = participants;
+        this.isGroupChat = true;
+        this.createdAt = LocalDateTime.now();
+        this.creatorId = creatorId;
     }
 
     public Chat() {}
