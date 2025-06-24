@@ -1,6 +1,5 @@
-package com.example.chatServer.Message;
+package com.example.chatServer.model.entity;
 
-import com.example.chatServer.chat.Chat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;

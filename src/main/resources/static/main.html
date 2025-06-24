@@ -23,6 +23,11 @@
                 <input class="searchInput" type="search" id="asideSearch" placeholder="Search...">
             </form>
         </div>
+        <div class="menu">
+            <div class="menuItem">
+                create group chat
+            </div>
+        </div>
 
         <div class="chatList">
         </div>
@@ -272,7 +277,7 @@
             msgElement.style.borderRadius = '20px';
             msgElement.style.backgroundColor = '#212121';
             msgElement.style.padding = '15px';
-            msgElement.innerHTML = `${content}`;
+            msgElement.textContent = content;
             if (sender === localStorage.getItem('username')) {
                 msgElement.style.backgroundColor = 'mediumslateblue';
                 msg.style.textAlign = 'right';

@@ -1,6 +1,8 @@
-package com.example.chatServer.token;
+package com.example.chatServer.sevice;
 
-import com.example.chatServer.user.UserRepository;
+import com.example.chatServer.model.entity.Token;
+import com.example.chatServer.repository.TokenRepository;
+import com.example.chatServer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

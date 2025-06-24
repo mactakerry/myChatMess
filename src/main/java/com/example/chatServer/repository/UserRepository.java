@@ -1,5 +1,6 @@
-package com.example.chatServer.user;
+package com.example.chatServer.repository;
 
+import com.example.chatServer.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

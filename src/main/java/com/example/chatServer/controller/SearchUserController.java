@@ -1,5 +1,7 @@
-package com.example.chatServer.user;
+package com.example.chatServer.controller;
 
+import com.example.chatServer.model.entity.User;
+import com.example.chatServer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

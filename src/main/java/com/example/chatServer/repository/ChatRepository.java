@@ -1,5 +1,7 @@
-package com.example.chatServer.chat;
+package com.example.chatServer.repository;
 
+import com.example.chatServer.model.entity.Chat;
+import com.example.chatServer.model.dto.ChatDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

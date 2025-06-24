@@ -1,4 +1,4 @@
-package com.example.chatServer.chat;
+package com.example.chatServer.model.dto;
 
 import lombok.Data;
 

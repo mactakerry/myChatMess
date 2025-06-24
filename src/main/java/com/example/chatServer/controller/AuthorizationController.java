@@ -1,11 +1,11 @@
-package com.example.chatServer.authorization;
+package com.example.chatServer.controller;
 
-import com.example.chatServer.token.Token;
-import com.example.chatServer.token.TokenRepository;
-import com.example.chatServer.token.TokenService;
-import com.example.chatServer.user.User;
-import com.example.chatServer.user.UserDTO;
-import com.example.chatServer.user.UserRepository;
+import com.example.chatServer.model.entity.Token;
+import com.example.chatServer.repository.TokenRepository;
+import com.example.chatServer.sevice.TokenService;
+import com.example.chatServer.model.entity.User;
+import com.example.chatServer.model.dto.UserDTO;
+import com.example.chatServer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

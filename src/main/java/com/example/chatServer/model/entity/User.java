@@ -1,4 +1,4 @@
-package com.example.chatServer.user;
+package com.example.chatServer.model.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

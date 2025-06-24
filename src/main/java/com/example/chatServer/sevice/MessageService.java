@@ -1,6 +1,9 @@
-package com.example.chatServer.Message;
+package com.example.chatServer.sevice;
 
-import com.example.chatServer.chat.ChatRepository;
+import com.example.chatServer.model.entity.Message;
+import com.example.chatServer.model.dto.MessageDTO;
+import com.example.chatServer.repository.MessageRepository;
+import com.example.chatServer.repository.ChatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
