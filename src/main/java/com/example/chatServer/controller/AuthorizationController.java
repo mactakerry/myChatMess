@@ -39,11 +39,7 @@ public class AuthorizationController {
     }
 
     @PostMapping("/validateToken")
-    public ResponseEntity<String> validateToken (@RequestBody TokenDTO dto) {
-        if (!tokenService.validateToken(dto.getName())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Please login again");
-        }
-
-        return ResponseEntity.ok("Success");
+    public boolean validateToken (@RequestBody TokenDTO dto) {
+        return tokenService.validateToken(dto.getName());
     }
 }

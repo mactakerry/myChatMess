@@ -128,11 +128,13 @@
                     body: token
                 });
 
-                if (!response.ok) {
-                    throw new Error('Ошибка при логине с токеном');
+
+                const data = await response.json();
+
+                if (!data) {
+                    throw new Error('invalid Token');
                 }
 
-                const data = await response.text();
                 updateLayout();
 
                 await fetch('/getAllUserChats', {
