@@ -3,6 +3,8 @@ package com.example.chatServer.model.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import javax.validation.constraints.NotBlank;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -22,4 +24,8 @@ public class User {
     public User() {}
 
 
+    public User(String username, String encode) {
+        this.username = username;
+        this.password = encode;
+    }
 }

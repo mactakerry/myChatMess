@@ -62,7 +62,7 @@ public class ChatController {
     @PostMapping("/getAllUserChats")
     public ResponseEntity<?> getAllUserChats(@RequestBody String tokenName) {
         Token token = tokenService.findByName(tokenName);
-        if (!tokenService.validateToken(token)) {
+        if (!tokenService.validateToken(tokenName)) {
             return ResponseEntity.status(401).build();
         }
 

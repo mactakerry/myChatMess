@@ -122,7 +122,7 @@
             const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch('/loginWithToken', {
+                const response = await fetch('/validateToken', {
                     method: 'POST',
                     headers: {'Content-Type': 'text/plain'},
                     body: token
@@ -169,7 +169,7 @@
                 });
             } catch (err) {
                 alert(err);
-               // window.location.href = '/authorization.html';
+                window.location.href = '/authorization.html';
             }
 
         });

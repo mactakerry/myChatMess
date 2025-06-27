@@ -35,17 +35,15 @@ public class TokenService {
         return token;
     }
 
-    public boolean validateToken(Token token) {
+    public boolean validateToken(String tokenName) {
+        Token token = tokenRepository.findByName(tokenName);
         if (token == null) {
             return false;
         }
 
-        return tokenRepository.existsById(token.getId());
-    }
-
-    public boolean isTimeExpiration(Token token) {
-        if (token == null) return true;
         long daysPassed = ChronoUnit.DAYS.between(token.getDate(), LocalDate.now());
+
+
         return daysPassed > 30;
     }
 
