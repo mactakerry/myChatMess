@@ -9,6 +9,7 @@ import com.example.chatServer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +25,9 @@ public class AuthorizationController {
     private TokenService tokenService;
 
     @Autowired
+    BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    @Autowired
     private TokenRepository tokenRepository;
 
     @PostMapping("/reg")
@@ -31,6 +35,7 @@ public class AuthorizationController {
         if (userRepository.existsByUsername(user.getUsername())) {
             return ResponseEntity.ok("Please select another username");
         }
+        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
         userRepository.save(user);
 
         return ResponseEntity.ok("Success");
@@ -46,7 +51,7 @@ public class AuthorizationController {
 
         User user = optionalUser.get();
 
-        if (userDTO.getPassword().equals(user.getPassword())) {
+        if (bCryptPasswordEncoder.matches(userDTO.getPassword(), user.getPassword())) {
             Token token = tokenService.generateToken(user.getId());
             return ResponseEntity.ok(token.getName());
         }
