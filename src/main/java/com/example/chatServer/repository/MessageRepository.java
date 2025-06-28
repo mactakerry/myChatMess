@@ -9,7 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {
-    List<MessageDTO> findByChatIdOrderByTimeAsc(Long chatId);
-
     Page<Message> findByChatId(Long chatId, Pageable pageable);
 }

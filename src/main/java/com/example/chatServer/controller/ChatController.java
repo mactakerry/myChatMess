@@ -43,10 +43,7 @@ public class ChatController {
         User user1 = userService.getUserById(token.getUserId());
         User user2 = userService.findByUserName(names[1]).get();
 
-        Chat chat = chatRepository.findByUserId1AndUserId2(user1.getId(), user2.getId());
-        if (chat == null) {
-            chat = chatRepository.findByUserId1AndUserId2(user2.getId(), user1.getId());
-        }
+        Chat chat = chatRepository.findByName(user1.getUsername() + "-" + user2.getUsername());
 
         if (chat == null) {
             Chat newChat = new Chat(user1, user2);
@@ -71,27 +68,7 @@ public class ChatController {
         if (user == null) {
             return ResponseEntity.ofNullable("Кто ты бля ");
         }
-        List<ChatDTO> chats1 = chatRepository.findAllByUserId1(user.getId());
-        List<ChatDTO> chats2 = chatRepository.findAllByUserId2(user.getId());
-        List<ChatDTO> groupChats = chatRepository.findGroupChatsByParticipants(user);
-
-        chats1.addAll(chats2);
-        chats1.addAll(groupChats);
-
-        for (ChatDTO chatDTO:chats1) {
-            if (chatDTO.isGroupChat()) {
-                continue;
-            }
-
-            User chatUser1 = userService.getUserById(chatDTO.getUserId1());
-            if ((user.getUsername().equals(chatUser1.getUsername()))) {
-                chatDTO.setName(userService.getUserById(chatDTO.getUserId2()).getUsername());
-
-                continue;
-            }
-
-            chatDTO.setName(chatUser1.getUsername());
-        }
+        Set<ChatDTO> chats1 = chatRepository.findChatsByParticipants(user);
 
         return ResponseEntity.ok(chats1);
     }
