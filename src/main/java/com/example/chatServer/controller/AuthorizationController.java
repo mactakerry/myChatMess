@@ -25,10 +25,10 @@ public class AuthorizationController {
     private AuthService authService;
 
     @PostMapping("/reg")
-    public ResponseEntity<String> createUser(@Valid @RequestBody RegistrationUserDTO dto) {
+    public ResponseEntity<Void> createUser(@Valid @RequestBody RegistrationUserDTO dto) {
         authService.register(dto);
 
-        return ResponseEntity.ok("Success");
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/login")
@@ -39,7 +39,10 @@ public class AuthorizationController {
     }
 
     @PostMapping("/validateToken")
-    public boolean validateToken (@RequestBody TokenDTO dto) {
-        return tokenService.validateToken(dto.getName());
+    public ResponseEntity<Void> validateToken (@RequestBody TokenDTO dto) {
+        if (!tokenService.validateToken(dto.getValue())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok().build();
     }
 }

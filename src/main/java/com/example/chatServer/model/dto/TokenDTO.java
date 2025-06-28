@@ -6,9 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TokenDTO {
-    private String name;
+    private String value;
 
-    public TokenDTO(String token) {
-        name = token;
+    public TokenDTO(String value) {
+        this.value = value;
     }
 }

@@ -14,7 +14,7 @@ public class Token {
     private long id;
 
     @Column
-    private String name;
+    private String value;
 
     @Column
     private LocalDate date = LocalDate.now();
@@ -24,8 +24,8 @@ public class Token {
 
     public Token() {}
 
-    public Token(String name, long userId) {
-        this.name = name;
+    public Token(String value, long userId) {
+        this.value = value;
         this.userId = userId;
     }
 }

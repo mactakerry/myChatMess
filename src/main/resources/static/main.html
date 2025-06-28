@@ -124,17 +124,17 @@
             try {
                 const response = await fetch('/validateToken', {
                     method: 'POST',
-                    headers: {'Content-Type': 'text/plain'},
-                    body: token
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({value: token})
                 });
 
-
-                const data = await response.json();
-
-                if (!data) {
+                if (!response.ok) {
                     throw new Error('invalid Token');
+
                 }
 
+                const data = await response.json();
+                
                 updateLayout();
 
                 await fetch('/getAllUserChats', {
@@ -171,7 +171,7 @@
                 });
             } catch (err) {
                 alert(err);
-                window.location.href = '/authorization.html';
+                //window.location.href = '/authorization.html';
             }
 
         });

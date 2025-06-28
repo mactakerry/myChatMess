@@ -20,14 +20,14 @@ public class TokenService {
 
     public Token generateToken(long userId) {
         Token token = tokenRepository.findByUserId(userId);
-        String name = UUID.randomUUID().toString();
+        String value = UUID.randomUUID().toString();
         if (token == null) {
-            Token newToken = new Token(name, userId);
+            Token newToken = new Token(value, userId);
             tokenRepository.save(newToken);
             return newToken;
         }
 
-        token.setName(name);
+        token.setValue(value);
         token.setDate(LocalDate.now());
 
         tokenRepository.save(token);
@@ -35,8 +35,8 @@ public class TokenService {
         return token;
     }
 
-    public boolean validateToken(String tokenName) {
-        Token token = tokenRepository.findByName(tokenName);
+    public boolean validateToken(String value) {
+        Token token = tokenRepository.findByValue(value);
         if (token == null) {
             return false;
         }
@@ -44,10 +44,10 @@ public class TokenService {
         long daysPassed = ChronoUnit.DAYS.between(token.getDate(), LocalDate.now());
 
 
-        return daysPassed > 30;
+        return daysPassed < 30;
     }
 
-    public Token findByName(String name) {
-        return tokenRepository.findByName(name);
+    public Token findByValue(String value) {
+        return tokenRepository.findByValue(value);
     }
 }

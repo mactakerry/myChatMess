@@ -38,7 +38,7 @@ public class ChatController {
 
     @PostMapping("/grChat")
     public ResponseEntity<Long> grChat(@RequestBody String[] names) {
-        Token token = tokenService.findByName(names[0]);
+        Token token = tokenService.findByValue(names[0]);
 
         User user1 = userService.getUserById(token.getUserId());
         User user2 = userService.findByUserName(names[1]).get();
@@ -60,9 +60,9 @@ public class ChatController {
     }
 
     @PostMapping("/getAllUserChats")
-    public ResponseEntity<?> getAllUserChats(@RequestBody String tokenName) {
-        Token token = tokenService.findByName(tokenName);
-        if (!tokenService.validateToken(tokenName)) {
+    public ResponseEntity<?> getAllUserChats(@RequestBody String value) {
+        Token token = tokenService.findByValue(value);
+        if (!tokenService.validateToken(value)) {
             return ResponseEntity.status(401).build();
         }
 
@@ -98,7 +98,7 @@ public class ChatController {
 
     @PostMapping("/createGroup")
     public ResponseEntity<Long> createGroup(@RequestBody CreateGroupRequest request) {
-        Token token = tokenService.findByName(request.getCreatorName());
+        Token token = tokenService.findByValue(request.getCreatorName());
         User creator = userService.getUserById(token.getUserId());
 
         System.out.println("DAWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW");

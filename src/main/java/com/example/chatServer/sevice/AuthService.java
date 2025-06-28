@@ -38,6 +38,6 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        return tokenService.generateToken(user.getId()).getName();
+        return tokenService.generateToken(user.getId()).getValue();
     }
 }

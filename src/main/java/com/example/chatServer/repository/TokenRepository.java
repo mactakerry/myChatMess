@@ -8,5 +8,5 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
 
     boolean existsById(long id);
 
-    Token findByName(String tokenName);
+    Token findByValue(String value);
 }
