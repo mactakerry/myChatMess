@@ -1,6 +1,6 @@
 package com.example.chatServer.controller;
 
-import com.example.chatServer.model.chat.Chat;
+import com.example.chatServer.model.entity.Chat;
 import com.example.chatServer.model.dto.ChatDTO;
 import com.example.chatServer.model.dto.request.CreateGroupRequest;
 import com.example.chatServer.repository.ChatRepository;
@@ -117,7 +117,7 @@ public class ChatController {
             participants.add(user);
         }
 
-        Chat groupChat = new Chat(request.getName(), participants, creator.getId());
+        Chat groupChat = new Chat(request.getName(), participants, creator);
 
         chatRepository.save(groupChat);
         return ResponseEntity.ok(groupChat.getId());

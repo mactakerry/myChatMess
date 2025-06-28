@@ -1,7 +1,5 @@
-package com.example.chatServer.model.chat;
+package com.example.chatServer.model.entity;
 
-import com.example.chatServer.model.entity.Message;
-import com.example.chatServer.model.entity.User;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -12,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "chats")
+@Table(name = "chats", indexes = @Index(columnList = "isGroupChat"))
 @Data
 public class Chat {
 
@@ -20,23 +18,18 @@ public class Chat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column
-    private long userId1;
-
-    @Column
-    private long userId2;
-
     private boolean isGroupChat = false;
 
-    @Column
-    private long creatorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_id")
+    private User creator;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "chat_participants",
             joinColumns = @JoinColumn(name = "chat_id"),
@@ -48,17 +41,18 @@ public class Chat {
     private List<Message> messages = new ArrayList<>();
 
     public Chat(User u1, User u2) {
-        userId1 = u1.getId();
-        userId2 = u2.getId();
         name = u1.getUsername() + "-" + u2.getUsername();
+        isGroupChat = false;
+        participants.add(u1);
+        participants.add(u2);
     }
 
-    public Chat(String name, Set<User> participants, long creatorId) {
+    public Chat(String name, Set<User> participants, User creator) {
         this.name = name;
-        this.participants = participants;
+        this.participants.add(creator);
+        this.participants.addAll(participants);
         this.isGroupChat = true;
-        this.createdAt = LocalDateTime.now();
-        this.creatorId = creatorId;
+        this.creator = creator;
     }
 
     public Chat() {}

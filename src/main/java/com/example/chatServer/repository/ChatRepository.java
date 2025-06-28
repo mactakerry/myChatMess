@@ -1,6 +1,6 @@
 package com.example.chatServer.repository;
 
-import com.example.chatServer.model.chat.Chat;
+import com.example.chatServer.model.entity.Chat;
 import com.example.chatServer.model.dto.ChatDTO;
 import com.example.chatServer.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

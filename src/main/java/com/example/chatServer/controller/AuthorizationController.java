@@ -1,7 +1,6 @@
 package com.example.chatServer.controller;
 
 import com.example.chatServer.model.dto.TokenDTO;
-import com.example.chatServer.model.dto.UserDTO;
 import com.example.chatServer.model.dto.authDTO.LoginUserDTO;
 import com.example.chatServer.model.dto.authDTO.RegistrationUserDTO;
 import com.example.chatServer.sevice.AuthService;
