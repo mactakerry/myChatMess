@@ -67,6 +67,11 @@ public class MessageController {
             @RequestParam(defaultValue = "createdAt,desc") String sort,
             @AuthenticationPrincipal User currentUser
     ) {
+        if (size > 100) {
+            log.warn("Еблан {} запросил size={}", currentUser.getUsername(), size);
+            return ResponseEntity.badRequest().build();
+        }
+
         if (!chatService.isUserInChat(chatId, currentUser.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

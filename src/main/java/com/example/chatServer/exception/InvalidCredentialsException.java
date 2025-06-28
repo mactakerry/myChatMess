@@ -1,7 +1,7 @@
 package com.example.chatServer.exception;
 
 public class InvalidCredentialsException extends RuntimeException {
-    public InvalidCredentialsException() { // Не говорим что именно неверно
+    public InvalidCredentialsException() {
         super("Invalid credentials");
     }
 }
