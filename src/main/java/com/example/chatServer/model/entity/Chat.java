@@ -40,11 +40,12 @@ public class Chat {
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> messages = new ArrayList<>();
 
-    public Chat(User u1, User u2) {
+    public Chat(User u1, User u2, User creator) {
         name = u1.getUsername() + "-" + u2.getUsername();
         isGroupChat = false;
         participants.add(u1);
         participants.add(u2);
+        this.creator = creator;
     }
 
     public Chat(String name, Set<User> participants, User creator) {

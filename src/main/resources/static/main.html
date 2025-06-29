@@ -59,6 +59,37 @@
         </div>
     </main>
 
-    <script src="ChatApp.js" defer></script>
+    <script src="ChatApp.js" defer>
+        // Управление меню
+        document.querySelector('.menuButton').addEventListener('click', () => {
+            if (state.menuToggle) {
+                elements.menu.style.display = 'none';
+            } else {
+                elements.menu.style.display = 'grid';
+            }
+
+            state.menuToggle = !state.menuToggle;
+        })
+
+        document.getElementById('createGroupButton').addEventListener('click', (event) => {
+            state.menuToggle = !state.menuToggle;
+            elements.menu.style.display = 'none';
+            elements.asideHeader.style.display = 'none';
+            elements.chatList.style.display = 'none';
+            elements.createGroupChatForm.style.display = 'block';
+        })
+
+        document.getElementById('crGrChFormBackButton').addEventListener('click', () => {
+            elements.asideHeader.style.display = 'grid';
+            elements.createGroupChatForm.style.display = 'none';
+            elements.chatList.style.display = 'flex';
+        })
+
+        // Кнопка "Назад" в мобильной версии
+        document.querySelector('.mobileBackButton').addEventListener('click', () => {
+            state.currentChat = null;
+            updateLayout();
+        });
+    </script>
 </body>
 </html>

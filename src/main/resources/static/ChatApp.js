@@ -14,6 +14,7 @@ const elements = {
     chatInput: document.querySelector('.chatInput'),
     chatList: document.querySelector('.chatList'),
     chatContainer: document.querySelector('.chat'),
+    chat: document.querySelector('.chat'),
     main: document.querySelector('main'),
     aside: document.querySelector('aside'),
     menu: document.querySelector('.menu'),
@@ -57,8 +58,8 @@ async function fetchUserChats() {
     const token = localStorage.getItem('token');
     const response = await fetch('/getAllUserChats', {
         method: 'POST',
-        headers: {'Content-Type': 'text/plain'},
-        body: token
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: token})
     });
 
     if (!response.ok) throw new Error('Failed to load chats');
@@ -78,14 +79,14 @@ function renderChatList(chats) {
         const chatElement = createChatElement(chat);
         elements.chatList.appendChild(chatElement);
 
-        if (!chat.isGroupChat) {
-            const groupChatElement = createChatElement(chat, true);
+        if (chat.isGroupChat) {
+            const groupChatElement = createChatElement(chat, false);
             elements.addChatList.appendChild(groupChatElement);
         }
     });
 }
 
-function createChatElement(chat, isCheckbox = false) {
+function createChatElement(chat, isCheckbox) {
     const chatElement = document.createElement('div');
     chatElement.classList.add('chatInf');
     chatElement.textContent = chat.name;
@@ -107,21 +108,23 @@ function addMessageToChat(content, sender) {
 // =====================
 // Функции работы с WebSocket
 // =====================
-async function connectWebSocket() {
-    if (state.stompClient) return;
+async function connect(){
+    if (!state.stompClient) {
+        const socket = new SockJS('/ws/chat');
+        state.stompClient = Stomp.over(socket);
 
-    const socket = new SockJS('/ws/chat');
-    state.stompClient = Stomp.over(socket);
-    state.stompClient.debug = () => {}; // Отключить логи
+        state.stompClient.debug = (str) => console.log('STOMP DEBUG:', str);
 
-    return new Promise((resolve, reject) => {
-        state.stompClient.connect({}, resolve, reject);
-    });
+        return new Promise((resolve, reject) => {
+            state.stompClient.connect({}, () => resolve(), (error) => reject(error));
+        });
+    }
+    return Promise.resolve();
 }
 
 async function subscribeToChat(chatId) {
     if (state.currentSubscription) {
-        state.currentSubscription.unsubscribe();
+        await state.currentSubscription.unsubscribe();
     }
 
     state.currentSubscription = state.stompClient.subscribe(
@@ -138,30 +141,121 @@ async function subscribeToChat(chatId) {
 // =====================
 function setupEventListeners() {
     // Навигация по чатам
-    elements.chatList.addEventListener('click', handleChatSelect);
-
-    // Отправка сообщений
-    document.getElementById('sendMessageForm').addEventListener('submit', handleMessageSubmit);
-
-    // Поиск чатов
-    document.getElementById('asideSearchForm').addEventListener('submit', handleSearch);
-
-    // Управление меню
-    document.querySelector('.menuButton').addEventListener('click', toggleMenu);
-    document.getElementById('createGroupButton').addEventListener('click', showGroupForm);
-    document.getElementById('crGrChFormBackButton').addEventListener('click', hideGroupForm);
-
-    // Создание группового чата
-    elements.createGroupChatForm.addEventListener('submit', handleGroupCreate);
-
-    // Кнопка "Назад" в мобильной версии
-    document.querySelector('.mobileBackButton').addEventListener('click', () => {
-        state.currentChat = null;
-        updateLayout();
+    elements.chatList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('chatInf')) {
+            selectChat(event.target);
+        }
     });
 
+    // Отправка сообщений
+    document.getElementById('sendMessageForm').addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!elements.currentChat || !elements.currentChat.dataset.chatId) {
+            alert("Сначала выберите чат!");
+            return;
+        }
+
+        const message = elements.chatInput.value;
+        if (!message) return;
+
+        state.stompClient.send("/app/send", {}, JSON.stringify({
+            content: message,
+            chatId: parseInt(elements.currentChat.dataset.chatId),
+            sender: localStorage.getItem('username')
+        }));
+
+        elements.chatInput.value = '';
+    });
+
+    // Поиск чатов
+    document.getElementById('asideSearchForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const searchValue = document.getElementById('asideSearch').value.trim();
+        if (!searchValue) return;
+
+        // Поиск существующего чата
+        const chatInfs = document.querySelectorAll('.chatInf');
+        for (const chat of chatInfs) {
+            if (chat.textContent === searchValue) {
+                selectChat(chat);
+                return;
+            }
+        }
+
+        // Создание нового чата
+        try {
+            const userRes = await fetch('/searchUser', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: searchValue})
+            });
+
+            if (await userRes.text() === 'Success') {
+                const names = [localStorage.getItem('token'), searchValue];
+                const chatRes = await fetch('/grChat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(names)
+                });
+
+                const chatId = await chatRes.json();
+                const chatInf = document.createElement('div');
+                chatInf.classList.add('chatInf');
+                chatInf.textContent = searchValue;
+                chatInf.dataset.chatId = chatId;
+                document.querySelector('.chatList').appendChild(chatInf);
+                selectChat(chatInf);
+            }
+        } catch (err) {
+            console.error('Search error:', err);
+            alert('Ошибка поиска');
+        }
+    });
+
+
+
+    // Создание группового чата
+    elements.createGroupChatForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const items = elements.addChatList.querySelectorAll('.chatInf');
+        let participants = [];
+
+        items.forEach(item => {
+            const flag = item.querySelector('input[type="checkbox"]');
+
+            if (flag) {
+                participants.push(item.textContent);
+            }
+        })
+
+        await fetch('/createGroup', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: elements.groupNameInput.value, participants:participants, creatorName:localStorage.getItem('token')})
+        }).then(async response => {
+            return await response.json();
+        }).then(chatId => {
+            const chatInf = document.createElement('div');
+            chatInf.classList.add('chatInf');
+            chatInf.textContent = elements.groupNameInput.value;
+            chatInf.dataset.chatId = chatId;
+            document.querySelector('.chatList').appendChild(chatInf);
+            selectChat(chatInf);
+        })
+
+        elements.asideHeader.style.display = 'grid';
+        elements.createGroupChatForm.style.display = 'none';
+        elements.chatList.style.display = 'flex';
+    })
+
+
+
     // Обработчики изменения размера окна
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', () => {
+        updateAppHeight();
+        updateLayout();
+    });
     window.addEventListener('orientationchange', updateAppHeight);
     window.addEventListener('beforeunload', () => {
         if (state.stompClient?.connected) state.stompClient.disconnect();
@@ -180,6 +274,50 @@ function updateLayout() {
     elements.aside.style.display = isMobile && state.currentChat ? 'none' : 'block';
     elements.main.style.display = isMobile && !state.currentChat ? 'none' : 'grid';
 }
+
+async function selectChat(chatElement) {
+    if (!chatElement) return;
+
+    elements.titleChat.textContent = chatElement.textContent;
+    elements.currentChat = chatElement;
+    elements.chat.innerHTML = '';
+
+    await getAllMess(chatElement.dataset.chatId, 1, 30);
+
+    try {
+        await connect();
+
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+        }
+
+        currentSubscription = state.stompClient.subscribe(
+            `/topic/chat${chatElement.dataset.chatId}`,
+            (message) => {
+                const msg = JSON.parse(message.body);
+                addMessageToChat(msg.content, msg.sender);
+            }
+        );
+
+        console.log(`Подключено к чату ${chatElement.dataset.chatId}`);
+    } catch (error) {
+        console.error('Ошибка подключения:', error);
+    }
+
+    updateLayout();
+}
+
+async function getAllMess(chatId, page, size) {
+    await fetch(`/api/chats/${chatId}/messages?page=${page}&size=${size}`)
+        .then(res => res.json()).then(data => {
+            const messages = data.content
+            messages.forEach(message => {
+            addMessageToChat(message.content, message.sender);
+        })
+    });
+}
+
+
 
 // =====================
 // Инициализация при загрузке

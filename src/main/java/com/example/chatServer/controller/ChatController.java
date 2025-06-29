@@ -1,5 +1,6 @@
 package com.example.chatServer.controller;
 
+import com.example.chatServer.model.dto.TokenDTO;
 import com.example.chatServer.model.entity.Chat;
 import com.example.chatServer.model.dto.ChatDTO;
 import com.example.chatServer.model.dto.request.CreateGroupRequest;
@@ -9,6 +10,7 @@ import com.example.chatServer.sevice.TokenService;
 import com.example.chatServer.model.entity.User;
 import com.example.chatServer.repository.UserRepository;
 import com.example.chatServer.sevice.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +19,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
+
+@Slf4j
 @RestController
 public class ChatController {
     @Autowired
@@ -37,19 +40,23 @@ public class ChatController {
 
 
     @PostMapping("/grChat")
-    public ResponseEntity<Long> grChat(@RequestBody String[] names) {
-        Token token = tokenService.findByValue(names[0]);
+    public ResponseEntity<Long> grChat(@RequestBody String[] values) {
+        Token token = tokenService.findByValue(values[0]);
 
         User user1 = userService.getUserById(token.getUserId());
-        User user2 = userService.findByUserName(names[1]).get();
+        User user2 = userService.findByUserName(values[1]).get();
 
         Chat chat = chatRepository.findByName(user1.getUsername() + "-" + user2.getUsername());
 
         if (chat == null) {
-            Chat newChat = new Chat(user1, user2);
-            chatRepository.save(newChat);
-            System.out.println("Созадали новый чат --- " + newChat.getName() + " == " + newChat.getId());
-            return ResponseEntity.ok(newChat.getId());
+            chat = chatRepository.findByName(user2.getUsername() + "-" + user1.getUsername());
+            if (chat == null) {
+                Chat newChat = new Chat(user1, user2, user1);
+                chatRepository.save(newChat);
+                System.out.println("Созадали новый чат --- " + newChat.getName() + " == " + newChat.getId());
+                return ResponseEntity.ok(newChat.getId());
+            }
+
         }
 
         System.out.println(chat.getId() + " ЧАТ НАЙДЕН ");
@@ -57,7 +64,8 @@ public class ChatController {
     }
 
     @PostMapping("/getAllUserChats")
-    public ResponseEntity<?> getAllUserChats(@RequestBody String value) {
+    public ResponseEntity<?> getAllUserChats(@RequestBody TokenDTO dto) {
+        String value = dto.getValue();
         Token token = tokenService.findByValue(value);
         if (!tokenService.validateToken(value)) {
             return ResponseEntity.status(401).build();
@@ -69,6 +77,14 @@ public class ChatController {
             return ResponseEntity.ofNullable("Кто ты бля ");
         }
         Set<ChatDTO> chats1 = chatRepository.findChatsByParticipants(user);
+
+
+        if (chats1 != null) {
+            chats1.forEach(chatDTO -> {
+                log.info("{} запросил чат {}", user.getUsername(), chatDTO.getName());
+            });
+        }
+
 
         return ResponseEntity.ok(chats1);
     }
