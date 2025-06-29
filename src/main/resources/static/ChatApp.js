@@ -29,6 +29,7 @@ const elements = {
 // =====================
 async function initApp() {
     try {
+        await connect();
         await validateToken();
         await fetchUserChats();
         setupEventListeners();
@@ -102,7 +103,38 @@ function createChatElement(chat, isCheckbox) {
 }
 
 function addMessageToChat(content, sender) {
-    // ... (логика рендеринга сообщений)
+    const msg = document.createElement('div');
+    const msgElement = document.createElement('div');
+    msgElement.style.display = 'inline-block';
+    msgElement.style.borderRadius = '20px';
+    msgElement.style.backgroundColor = '#212121';
+    msgElement.style.padding = '15px';
+    msgElement.textContent = content;
+    if (sender === localStorage.getItem('username')) {
+        msgElement.style.backgroundColor = 'mediumslateblue';
+        msg.style.textAlign = 'right';
+    }
+    msg.style.margin = '10px';
+    msg.appendChild(msgElement);
+    elements.chat.appendChild(msg);
+    elements.chat.scrollTop = elements.chat.scrollHeight;
+}
+
+async function getAllMess(chatId, page, size) {
+    await fetch(`/api/chats/getMessages?page=${page}&size=${size}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({token: localStorage.getItem('token'), chatId: chatId}),
+    })
+        .then(res => res.json()).then(data => {
+            console.log(data + 'dawawawawawaw');
+            console.log(data.content);
+            const messages = data.content
+            messages.forEach(message => {
+                console.log(message);
+                addMessageToChat(message.content, message.sender);
+            })
+        });
 }
 
 // =====================
@@ -123,17 +155,25 @@ async function connect(){
 }
 
 async function subscribeToChat(chatId) {
-    if (state.currentSubscription) {
-        await state.currentSubscription.unsubscribe();
-    }
+    try {
+        await connect();
 
-    state.currentSubscription = state.stompClient.subscribe(
-        `/topic/chat${chatId}`,
-        message => {
-            const msg = JSON.parse(message.body);
-            addMessageToChat(msg.content, msg.sender);
+        if (state.currentSubscription) {
+            state.currentSubscription.unsubscribe();
         }
-    );
+
+        state.currentSubscription = state.stompClient.subscribe(
+            `/topic/chats/${chatId}/messages`,
+            (message) => {
+                const msg = JSON.parse(message.body);
+                addMessageToChat(msg.content, msg.sender);
+            }
+        );
+
+        console.log(`Подключено к чату ${chatId}`);
+    } catch (error) {
+        console.error('Ошибка подключения:', error);
+    }
 }
 
 // =====================
@@ -141,16 +181,16 @@ async function subscribeToChat(chatId) {
 // =====================
 function setupEventListeners() {
     // Навигация по чатам
-    elements.chatList.addEventListener('click', (event) => {
+    elements.chatList.addEventListener('click', async (event) => {
         if (event.target.classList.contains('chatInf')) {
-            selectChat(event.target);
+            await selectChat(event.target);
         }
     });
 
     // Отправка сообщений
     document.getElementById('sendMessageForm').addEventListener('submit', (event) => {
         event.preventDefault();
-        if (!elements.currentChat || !elements.currentChat.dataset.chatId) {
+        if (!state.currentChat || !state.currentChat.dataset.chatId) {
             alert("Сначала выберите чат!");
             return;
         }
@@ -158,10 +198,10 @@ function setupEventListeners() {
         const message = elements.chatInput.value;
         if (!message) return;
 
-        state.stompClient.send("/app/send", {}, JSON.stringify({
-            content: message,
-            chatId: parseInt(elements.currentChat.dataset.chatId),
-            sender: localStorage.getItem('username')
+        state.stompClient.send(`/app/chats/${state.currentChat.dataset.chatId}/messages`, {
+            token: localStorage.getItem('token')
+        }, JSON.stringify({
+            content: message
         }));
 
         elements.chatInput.value = '';
@@ -177,7 +217,7 @@ function setupEventListeners() {
         const chatInfs = document.querySelectorAll('.chatInf');
         for (const chat of chatInfs) {
             if (chat.textContent === searchValue) {
-                selectChat(chat);
+                await selectChat(chat);
                 return;
             }
         }
@@ -204,7 +244,7 @@ function setupEventListeners() {
                 chatInf.textContent = searchValue;
                 chatInf.dataset.chatId = chatId;
                 document.querySelector('.chatList').appendChild(chatInf);
-                selectChat(chatInf);
+                await selectChat(chatInf);
             }
         } catch (err) {
             console.error('Search error:', err);
@@ -278,44 +318,18 @@ function updateLayout() {
 async function selectChat(chatElement) {
     if (!chatElement) return;
 
+    await subscribeToChat(chatElement.dataset.chatId);
+
     elements.titleChat.textContent = chatElement.textContent;
-    elements.currentChat = chatElement;
+    state.currentChat = chatElement;
     elements.chat.innerHTML = '';
 
-    await getAllMess(chatElement.dataset.chatId, 1, 30);
-
-    try {
-        await connect();
-
-        if (currentSubscription) {
-            currentSubscription.unsubscribe();
-        }
-
-        currentSubscription = state.stompClient.subscribe(
-            `/topic/chat${chatElement.dataset.chatId}`,
-            (message) => {
-                const msg = JSON.parse(message.body);
-                addMessageToChat(msg.content, msg.sender);
-            }
-        );
-
-        console.log(`Подключено к чату ${chatElement.dataset.chatId}`);
-    } catch (error) {
-        console.error('Ошибка подключения:', error);
-    }
+    await getAllMess(chatElement.dataset.chatId, 0, 30);
 
     updateLayout();
 }
 
-async function getAllMess(chatId, page, size) {
-    await fetch(`/api/chats/${chatId}/messages?page=${page}&size=${size}`)
-        .then(res => res.json()).then(data => {
-            const messages = data.content
-            messages.forEach(message => {
-            addMessageToChat(message.content, message.sender);
-        })
-    });
-}
+
 
 
 

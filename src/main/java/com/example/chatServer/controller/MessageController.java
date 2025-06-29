@@ -1,13 +1,15 @@
 package com.example.chatServer.controller;
 
 import com.example.chatServer.exception.ForbiddenException;
+import com.example.chatServer.exception.InvalidTokenException;
 import com.example.chatServer.model.dto.ErrorDTO;
+import com.example.chatServer.model.dto.TokenDTO;
+import com.example.chatServer.model.dto.request.GetMessagesRequest;
 import com.example.chatServer.model.entity.Message;
 import com.example.chatServer.model.dto.MessageDTO;
+import com.example.chatServer.model.entity.Token;
 import com.example.chatServer.model.entity.User;
-import com.example.chatServer.sevice.ChatService;
-import com.example.chatServer.sevice.MessageService;
-import com.example.chatServer.sevice.SecurityService;
+import com.example.chatServer.sevice.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,12 +36,22 @@ public class MessageController {
     private final MessageService messageService;
     private final ChatService chatService;
     private final SecurityService securityService;
+    private final TokenService tokenService;
+    private final UserService userService;
 
     @MessageMapping("/chats/{chatId}/messages")
     @SendToUser("/queue/errors")
-    public void handleMessage(@DestinationVariable Long chatId, MessageSendRequest request, @Header("simpUser") User principal) {
+    public void handleMessage(@DestinationVariable Long chatId, MessageSendRequest request, @Header("token") TokenDTO tokenDTO) {
+
         try {
-            if (!chatService.isUserInChat(chatId, principal.getId())) {
+            if (!tokenService.validateToken(tokenDTO.getValue())) {
+                throw new InvalidTokenException("invalid token");
+            }
+
+            Token token = tokenService.findByValue(tokenDTO.getValue());
+            User principal = userService.getUserById(token.getUserId());
+
+            if (!securityService.isUserInChat(chatId, principal.getId())) {
                 throw new ForbiddenException("Access denied to chat");
             }
 
@@ -55,18 +67,28 @@ public class MessageController {
 
         } catch (Exception e) {
             log.error("WebSocket error " + e.getMessage());
-            messagingTemplate.convertAndSendToUser(principal.getUsername(), "/queue/errors", new ErrorDTO("MESSAGE_SEND_ERROR", e.getMessage()));
         }
     }
 
-    @GetMapping("/{chatId}/messages")
+    @PostMapping("/getMessages")
     public ResponseEntity<PageResponse<MessageDTO>> getChatMessages(
-            @PathVariable Long chatId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort,
-            @AuthenticationPrincipal User currentUser
-    ) {
+            @RequestBody GetMessagesRequest dto
+            ) {
+        if (!tokenService.validateToken(dto.getToken())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Token token = tokenService.findByValue(dto.getToken());
+
+        User currentUser = userService.getUserById(token.getUserId());
+
+        long chatId = dto.getChatId();
+
+        log.info("Getting messages for chat: {}, page: {}, size: {}", chatId, page, size);
+
+
         if (size > 100) {
             log.warn("Еблан {} запросил size={}", currentUser.getUsername(), size);
             return ResponseEntity.badRequest().build();
@@ -80,6 +102,8 @@ public class MessageController {
                 chatId,
                 PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")))
         );
+
+
 
         Page<MessageDTO> messageDTOPage = messages.map(Message::toDTO);
 

@@ -49,10 +49,7 @@ public class MessageService {
         Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new ChatNotFoundException("Чат не найден"));
         User sender = userRepository.findById(senderId).orElseThrow(() -> new UsernameNotFoundException(senderId + " user не найден"));
 
-        Message message = new Message();
-        message.setContent(content);
-        message.setChat(chat);
-        message.setSender(sender);
+        Message message = new Message(content, chat, sender);
 
         Message saved = messageRepository.save(message);
         return saved.toDTO();
