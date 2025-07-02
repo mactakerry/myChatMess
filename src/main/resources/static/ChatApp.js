@@ -5,7 +5,12 @@ const state = {
     stompClient: null,
     currentSubscription: null,
     currentChat: null,
-    menuToggle: false
+    menuToggle: false,
+    isLoading: false,
+    hasMoreMessages: true,
+    allMessages: [],
+    pageSize: 20,
+    currentPage: 0
 };
 
 // DOM элементы
@@ -33,6 +38,7 @@ async function initApp() {
         await validateToken();
         await fetchUserChats();
         setupEventListeners();
+        setupScrollListener();
         updateLayout();
         updateAppHeight();
     } catch (error) {
@@ -102,7 +108,7 @@ function createChatElement(chat, isCheckbox) {
     return chatElement;
 }
 
-function addMessageToChat(content, sender) {
+function addMessageToChat(content, sender, isBefore = true) {
     const msg = document.createElement('div');
     const msgElement = document.createElement('div');
     msgElement.style.display = 'inline-block';
@@ -116,25 +122,53 @@ function addMessageToChat(content, sender) {
     }
     msg.style.margin = '10px';
     msg.appendChild(msgElement);
-    elements.chat.appendChild(msg);
+
+    if (isBefore) {
+        elements.chat.insertBefore(msg, elements.chat.firstChild);
+    } else {
+        elements.chat.appendChild(msg)
+    }
+
     elements.chat.scrollTop = elements.chat.scrollHeight;
 }
 
-async function getAllMess(chatId, page, size) {
-    await fetch(`/api/chats/getMessages?page=${page}&size=${size}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({token: localStorage.getItem('token'), chatId: chatId}),
-    })
-        .then(res => res.json()).then(data => {
-            console.log(data + 'dawawawawawaw');
-            console.log(data.content);
-            const messages = data.content
-            messages.forEach(message => {
-                console.log(message);
+async function getAllMess(chatId, isInitialLoad = false) {
+    if (state.isLoading || !state.hasMoreMessages) return;
+
+    state.isLoading = true;
+
+    try {
+        const response = await fetch(`/api/chats/getMessages?page=${state.currentPage}&size=${state.pageSize}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                token: localStorage.getItem('token'),
+                chatId: chatId
+            }),
+        });
+
+        const data = await response.json();
+        const messages = data.content;
+
+        if (messages.length === 0) {
+            state.hasMoreMessages = false;
+        } else {
+            state.allMessages = messages;
+            messages.forEach((message) => {
                 addMessageToChat(message.content, message.sender);
             })
-        });
+
+            state.currentPage++;
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки сообщений:', error);
+    } finally {
+        state.isLoading = false;
+
+        if (isInitialLoad) {
+            elements.chat.scrollTop = elements.chat.scrollHeight;
+        }
+    }
 }
 
 // =====================
@@ -166,7 +200,7 @@ async function subscribeToChat(chatId) {
             `/topic/chats/${chatId}/messages`,
             (message) => {
                 const msg = JSON.parse(message.body);
-                addMessageToChat(msg.content, msg.sender);
+                addMessageToChat(msg.content, msg.sender, false);
             }
         );
 
@@ -318,18 +352,32 @@ function updateLayout() {
 async function selectChat(chatElement) {
     if (!chatElement) return;
 
+    state.currentPage = 0;
+    state.isLoading = false;
+    state.hasMoreMessages = true;
+    state.allMessages = [];
+
+
     await subscribeToChat(chatElement.dataset.chatId);
 
     elements.titleChat.textContent = chatElement.textContent;
     state.currentChat = chatElement;
     elements.chat.innerHTML = '';
 
-    await getAllMess(chatElement.dataset.chatId, 0, 30);
+    await getAllMess(chatElement.dataset.chatId);
 
     updateLayout();
 }
 
+function setupScrollListener() {
+    elements.chat.addEventListener('scroll', async () => {
+        if (state.isLoading || !state.hasMoreMessages) return;
 
+        if (elements.chat.scrollTop < state.pageSize) {
+            await getAllMess(state.currentChat.dataset.chatId);
+        }
+    });
+}
 
 
 
