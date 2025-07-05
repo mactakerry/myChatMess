@@ -34,13 +34,14 @@ const elements = {
 // =====================
 async function initApp() {
     try {
-        await connect();
-        await validateToken();
         await fetchUserChats();
         setupEventListeners();
         setupScrollListener();
         updateLayout();
         updateAppHeight();
+        await connect();
+        await notificationNewChats();
+
     } catch (error) {
         console.error('Initialization error:', error);
         alert('Ошибка авторизации');
@@ -51,22 +52,37 @@ async function initApp() {
 // =====================
 // Функции работы с API
 // =====================
-async function validateToken() {
+
+async function authorizedFetch(url, options = {}) {
+    if (!options.headers) options.headers = {};
+
     const token = localStorage.getItem('token');
-    const response = await fetch('/validateToken', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({value: token})
-    });
-    if (!response.ok) throw new Error('Invalid token');
+    options.headers['Authorization'] = `Bearer ${token}`;
+
+    try {
+        const response = await fetch(url, options);
+
+        if (response.status === 401) {
+            alert('Время истекла');
+            window.location.href = '/authorization.html';
+            return null;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response;
+    } catch (error) {
+        console.error('Fetch error:', error);
+        throw error;
+    }
 }
 
 async function fetchUserChats() {
-    const token = localStorage.getItem('token');
-    const response = await fetch('/getAllUserChats', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({value: token})
+    console.log('Fetching user chats...');
+    const response = await authorizedFetch('/getAllUserChats', {
+        method: 'GET'
     });
 
     if (!response.ok) throw new Error('Failed to load chats');
@@ -138,14 +154,17 @@ async function getAllMess(chatId, isInitialLoad = false) {
     state.isLoading = true;
 
     try {
-        const response = await fetch(`/api/chats/getMessages?page=${state.currentPage}&size=${state.pageSize}`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                token: localStorage.getItem('token'),
-                chatId: chatId
-            }),
-        });
+        const response = await authorizedFetch(
+            `/api/chats/getMessages?page=${state.currentPage}&size=${state.pageSize}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({chatId: chatId})
+            }
+        );
 
         const data = await response.json();
         const messages = data.content;
@@ -182,10 +201,40 @@ async function connect(){
         state.stompClient.debug = (str) => console.log('STOMP DEBUG:', str);
 
         return new Promise((resolve, reject) => {
-            state.stompClient.connect({}, () => resolve(), (error) => reject(error));
+            state.stompClient.connect(
+                { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                () => {
+                    console.log("WebSocket connected");
+                    notificationNewChats();
+                },
+                (error) => {
+                    console.error("WebSocket error", error);
+                }
+            );
         });
     }
     return Promise.resolve();
+}
+
+async function notificationNewChats() {
+    state.stompClient.subscribe(`/user/queue/chats/new`, (message) => {
+        console.log('before parse CHAT: ' + message)
+
+        const newChat = JSON.parse(message.body);
+        // Поиск существующего чата
+        const chatInfs = document.querySelectorAll('.chatInf');
+        for (const chat of chatInfs) {
+            if (chat.textContent === newChat.creator || chat.textContent === newChat.name) {
+                return;
+            }
+        }
+
+        if (newChat.isGroupChat) {
+            createChat(newChat.id, newChat.name);
+        } else {
+            createChat(newChat.id, newChat.creator);
+        }
+    });
 }
 
 async function subscribeToChat(chatId) {
@@ -199,8 +248,13 @@ async function subscribeToChat(chatId) {
         state.currentSubscription = state.stompClient.subscribe(
             `/topic/chats/${chatId}/messages`,
             (message) => {
+
+
+                console.log('before parse: ' + message);
                 const msg = JSON.parse(message.body);
+
                 addMessageToChat(msg.content, msg.sender, false);
+
             }
         );
 
@@ -260,23 +314,26 @@ function setupEventListeners() {
         try {
             const userRes = await fetch('/searchUser', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'},
                 body: JSON.stringify({username: searchValue})
             });
 
             if (await userRes.text() === 'Success') {
-                const names = [localStorage.getItem('token'), searchValue];
                 const chatRes = await fetch('/grChat', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(names)
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'},
+                    body: JSON.stringify(searchValue)
                 });
 
+
                 const chatId = await chatRes.json();
-                const chatInf = document.createElement('div');
-                chatInf.classList.add('chatInf');
-                chatInf.textContent = searchValue;
-                chatInf.dataset.chatId = chatId;
+
+                const chatInf = createChat(chatId, searchValue);
+
                 document.querySelector('.chatList').appendChild(chatInf);
                 await selectChat(chatInf);
             }
@@ -367,6 +424,14 @@ async function selectChat(chatElement) {
     await getAllMess(chatElement.dataset.chatId);
 
     updateLayout();
+}
+
+function createChat(chatId, chatName) {
+    const chatInf = document.createElement('div');
+    chatInf.classList.add('chatInf');
+    chatInf.textContent = chatName;
+    chatInf.dataset.chatId = chatId;
+    return chatInf;
 }
 
 function setupScrollListener() {

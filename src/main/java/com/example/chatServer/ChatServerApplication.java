@@ -1,5 +1,6 @@
 package com.example.chatServer;
 
+import jakarta.servlet.ServletContext;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -13,5 +14,6 @@ public class ChatServerApplication {
 	public static void main(String[] args) {
         SpringApplication.run(ChatServerApplication.class, args);
 	}
+
 
 }

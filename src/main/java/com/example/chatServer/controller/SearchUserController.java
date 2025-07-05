@@ -15,11 +15,13 @@ public class SearchUserController {
     private UserRepository userRepository;
 
     @PostMapping("/searchUser")
-    public ResponseEntity<String> searchUser(@RequestBody User user) {
-        if (userRepository.existsByUsername(user.getUsername())) {
+    public ResponseEntity<String> searchUser(@RequestBody SearchUserRequest user) {
+        if (userRepository.existsByUsername(user.username())) {
             return ResponseEntity.ok("Success");
         }
 
         return ResponseEntity.ok("Nothing");
     }
+
+    public record SearchUserRequest(String username) {};
 }

@@ -1,26 +1,38 @@
 package com.example.chatServer.sevice;
 
-import com.example.chatServer.exception.InvalidCredentialsException;
 import com.example.chatServer.exception.UsernameExistsException;
-import com.example.chatServer.model.dto.UserDTO;
 import com.example.chatServer.model.dto.authDTO.LoginUserDTO;
 import com.example.chatServer.model.dto.authDTO.RegistrationUserDTO;
 import com.example.chatServer.model.entity.User;
 import com.example.chatServer.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class AuthService {
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private TokenService tokenService;
+    private UserService userService;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private AuthenticationProvider authenticationProvider;
+
 
     public void register(RegistrationUserDTO dto) {
         if (userRepository.existsByUsername(dto.getUsername())) {
@@ -31,13 +43,19 @@ public class AuthService {
     }
 
     public String login(LoginUserDTO dto) {
-        User user = userRepository.findByUsername(dto.getUsername())
-                .orElseThrow(InvalidCredentialsException::new);
+        Authentication u = authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        dto.getUsername(),
+                        dto.getPassword()
+                )
+        );
 
-        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            throw new InvalidCredentialsException();
-        }
+        log.info("Произошло логин: {}  {}", u.getName(), u.isAuthenticated());
 
-        return tokenService.generateToken(user.getId()).getValue();
+        UserDetails user = userService.loadUserByUsername(dto.getUsername());
+
+        String token = jwtService.generateToken(user);
+        log.info("Его токен: {}", token);
+        return token;
     }
 }

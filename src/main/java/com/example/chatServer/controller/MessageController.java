@@ -2,12 +2,9 @@ package com.example.chatServer.controller;
 
 import com.example.chatServer.exception.ForbiddenException;
 import com.example.chatServer.exception.InvalidTokenException;
-import com.example.chatServer.model.dto.ErrorDTO;
-import com.example.chatServer.model.dto.TokenDTO;
 import com.example.chatServer.model.dto.request.GetMessagesRequest;
 import com.example.chatServer.model.entity.Message;
 import com.example.chatServer.model.dto.MessageDTO;
-import com.example.chatServer.model.entity.Token;
 import com.example.chatServer.model.entity.User;
 import com.example.chatServer.sevice.*;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +22,7 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @Slf4j
@@ -34,35 +32,30 @@ import java.util.List;
 public class MessageController {
     private final SimpMessagingTemplate messagingTemplate;
     private final MessageService messageService;
-    private final ChatService chatService;
     private final SecurityService securityService;
-    private final TokenService tokenService;
     private final UserService userService;
+    private final JwtService jwtService;
 
     @MessageMapping("/chats/{chatId}/messages")
     @SendToUser("/queue/errors")
-    public void handleMessage(@DestinationVariable Long chatId, MessageSendRequest request, @Header("token") TokenDTO tokenDTO) {
+    public void handleMessage(@DestinationVariable Long chatId, MessageSendRequest request, Principal principal) {
 
         try {
-            if (!tokenService.validateToken(tokenDTO.getValue())) {
-                throw new InvalidTokenException("invalid token");
-            }
 
-            Token token = tokenService.findByValue(tokenDTO.getValue());
-            User principal = userService.getUserById(token.getUserId());
+            User sender = userService.loadUserByUsername(principal.getName());
 
-            if (!securityService.isUserInChat(chatId, principal.getId())) {
+            if (!securityService.isUserInChat(chatId, sender.getId())) {
                 throw new ForbiddenException("Access denied to chat");
             }
 
-            MessageDTO message = messageService.createMessage(chatId, principal.getId(), request.content);
+            MessageDTO message = messageService.createMessage(chatId, sender.getId(), request.content);
 
             messagingTemplate.convertAndSend(
                     "/topic/chats/" + chatId + "/messages",
                     message
             );
 
-            log.info("Message sent in chat {} by user {}", chatId, principal.getUsername());
+            log.info("Message sent in chat {} by user {}", chatId, sender.getUsername());
 
 
         } catch (Exception e) {
@@ -74,27 +67,19 @@ public class MessageController {
     public ResponseEntity<PageResponse<MessageDTO>> getChatMessages(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
-            @RequestBody GetMessagesRequest dto
-            ) {
-        if (!tokenService.validateToken(dto.getToken())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        Token token = tokenService.findByValue(dto.getToken());
-
-        User currentUser = userService.getUserById(token.getUserId());
-
+            @RequestBody GetMessagesRequest dto,
+            @AuthenticationPrincipal User currentUser
+    ) {
         long chatId = dto.getChatId();
 
         log.info("Getting messages for chat: {}, page: {}, size: {}", chatId, page, size);
 
-
         if (size > 100) {
-            log.warn("Еблан {} запросил size={}", currentUser.getUsername(), size);
+            log.warn("User {} requested too large page size: {}", currentUser.getUsername(), size);
             return ResponseEntity.badRequest().build();
         }
 
-        if (!chatService.isUserInChat(chatId, currentUser.getId())) {
+        if (!securityService.isUserInChat(chatId, currentUser.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -103,12 +88,10 @@ public class MessageController {
                 PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")))
         );
 
-
-
         Page<MessageDTO> messageDTOPage = messages.map(Message::toDTO);
-
         return ResponseEntity.ok(PageResponse.fromPage(messageDTOPage));
     }
+
 
 
     public record MessageSendRequest(String content) {}

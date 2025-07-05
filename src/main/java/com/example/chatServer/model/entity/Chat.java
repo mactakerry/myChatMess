@@ -1,5 +1,6 @@
 package com.example.chatServer.model.entity;
 
+import com.example.chatServer.model.dto.ChatDTO;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -57,4 +58,14 @@ public class Chat {
     }
 
     public Chat() {}
+
+    public ChatDTO toDto() {
+        return new ChatDTO(
+                id,
+                name,
+                isGroupChat,
+                creator
+        );
+    }
+
 }

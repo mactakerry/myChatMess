@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
-    <link rel="stylesheet" href="mainStyle.css">
+    <link rel="stylesheet" href="styles/mainStyle.css">
 
 
 </head>
@@ -59,7 +59,15 @@
         </div>
     </main>
 
-    <script src="ChatApp.js" defer>
+    <script src="js/ChatApp.js" defer>
+        const token = localStorage.getItem('token');
+
+        axios.interceptors.request.use(config => {
+            config.headers.Authorization = `Bearer ${token}`;
+            return config;
+        })
+
+
         // Управление меню
         document.querySelector('.menuButton').addEventListener('click', () => {
             if (state.menuToggle) {
@@ -71,7 +79,7 @@
             state.menuToggle = !state.menuToggle;
         })
 
-        document.getElementById('createGroupButton').addEventListener('click', (event) => {
+        document.getElementById('createGroupButton').addEventListener('click', () => {
             state.menuToggle = !state.menuToggle;
             elements.menu.style.display = 'none';
             elements.asideHeader.style.display = 'none';

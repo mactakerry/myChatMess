@@ -1,12 +1,10 @@
 package com.example.chatServer.controller;
 
-import com.example.chatServer.model.dto.TokenDTO;
 import com.example.chatServer.model.entity.Chat;
 import com.example.chatServer.model.dto.ChatDTO;
 import com.example.chatServer.model.dto.request.CreateGroupRequest;
 import com.example.chatServer.repository.ChatRepository;
-import com.example.chatServer.model.entity.Token;
-import com.example.chatServer.sevice.TokenService;
+import com.example.chatServer.sevice.ChatService;
 import com.example.chatServer.model.entity.User;
 import com.example.chatServer.repository.UserRepository;
 import com.example.chatServer.sevice.UserService;
@@ -14,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,47 +36,42 @@ public class ChatController {
     private UserService userService;
 
     @Autowired
-    private TokenService tokenService;
+    private ChatService chatService;
 
 
 
     @PostMapping("/grChat")
-    public ResponseEntity<Long> grChat(@RequestBody String[] values) {
-        Token token = tokenService.findByValue(values[0]);
+    public ResponseEntity<Long> grChat(@RequestBody String username) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
 
-        User user1 = userService.getUserById(token.getUserId());
-        User user2 = userService.findByUserName(values[1]).get();
+        User user1 = userService.loadUserByUsername(currentUsername);
+        User user2 = userService.loadUserByUsername(username);
 
-        Chat chat = chatRepository.findByName(user1.getUsername() + "-" + user2.getUsername());
-
-        if (chat == null) {
-            chat = chatRepository.findByName(user2.getUsername() + "-" + user1.getUsername());
-            if (chat == null) {
-                Chat newChat = new Chat(user1, user2, user1);
-                chatRepository.save(newChat);
-                System.out.println("Созадали новый чат --- " + newChat.getName() + " == " + newChat.getId());
-                return ResponseEntity.ok(newChat.getId());
-            }
-
+        if (user1 == null || user2 == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        System.out.println(chat.getId() + " ЧАТ НАЙДЕН ");
+        Chat chat = chatService.createPrivateChat(user1, user2);
+
         return ResponseEntity.ok(chat.getId());
     }
 
-    @PostMapping("/getAllUserChats")
-    public ResponseEntity<?> getAllUserChats(@RequestBody TokenDTO dto) {
-        String value = dto.getValue();
-        Token token = tokenService.findByValue(value);
-        if (!tokenService.validateToken(value)) {
-            return ResponseEntity.status(401).build();
-        }
+    @GetMapping("/getAllUserChats")
+    public ResponseEntity<?> getAllUserChats() {
+        log.info("GetAllUser begin");
 
-        User user = userService.getUserById(token.getUserId());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        log.info("getAllUser: " + authentication.getName());
+
+
+        User user = userService.loadUserByUsername(authentication.getName());
 
         if (user == null) {
-            return ResponseEntity.ofNullable("Кто ты бля ");
+            return ResponseEntity.ofNullable("unknown user");
         }
+
         Set<ChatDTO> chats1 = chatRepository.findChatsByParticipants(user);
 
 
@@ -91,10 +87,9 @@ public class ChatController {
 
     @PostMapping("/createGroup")
     public ResponseEntity<Long> createGroup(@RequestBody CreateGroupRequest request) {
-        Token token = tokenService.findByValue(request.getCreatorName());
-        User creator = userService.getUserById(token.getUserId());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        System.out.println("DAWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW");
+        User creator = userService.loadUserByUsername(authentication.getName());
 
         if (request.getParticipants().size() < 2) {
             return ResponseEntity.badRequest().body(-1L);

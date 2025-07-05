@@ -47,6 +47,8 @@ public class Message {
         return new MessageDTO(
                 content,
                 chat.getId(),
+                chat.getName(),
+                chat.isGroupChat(),
                 sender.getUsername(),
                 createdAt
         );

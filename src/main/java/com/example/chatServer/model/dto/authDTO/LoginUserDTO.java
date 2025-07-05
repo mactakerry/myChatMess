@@ -1,10 +1,9 @@
 package com.example.chatServer.model.dto.authDTO;
 
 import jakarta.persistence.Transient;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
-import lombok.Setter;
 
-import javax.validation.constraints.NotBlank;
 
 @Getter
 public class LoginUserDTO {

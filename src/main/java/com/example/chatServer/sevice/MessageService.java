@@ -41,7 +41,7 @@ public class MessageService {
     }
 
     @SneakyThrows
-    public MessageDTO createMessage(Long chatId, long senderId, String content) {
+    public MessageDTO createMessage(Long chatId, Long senderId, String content) {
         if (content == null || content.trim().isEmpty()) {
             throw new DickheadException("Сообщение пустое");
         }
