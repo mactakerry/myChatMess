@@ -36,11 +36,11 @@ async function initApp() {
     try {
         await fetchUserChats();
         setupEventListeners();
+        setupButtonsEventListener();
         setupScrollListener();
         updateLayout();
         updateAppHeight();
         await connect();
-        await notificationNewChats();
 
     } catch (error) {
         console.error('Initialization error:', error);
@@ -212,13 +212,7 @@ async function connect(){
 
 async function notificationNewChats() {
     state.stompClient.subscribe(`/user/queue/chats/new`, (message) => {
-        console.log('before parse CHAT: ' + message)
-
         const newChat = JSON.parse(message.body);
-
-        console.log('new CHAT: ' + newChat.toString());
-        console.log('new CHAT: ' + newChat.groupChat);
-        console.log('new CHAT: ' + newChat.creator);
 
         let chatElement;
         if (newChat.groupChat) {
@@ -260,6 +254,42 @@ async function subscribeToChat(chatId) {
     } catch (error) {
         console.error('Ошибка подключения:', error);
     }
+}
+
+// =====================
+// Кнопки
+// =====================
+function setupButtonsEventListener() {
+    // Управление меню
+    document.querySelector('.menuButton').addEventListener('click', () => {
+        if (state.menuToggle) {
+            elements.menu.style.display = 'none';
+        } else {
+            elements.menu.style.display = 'grid';
+        }
+
+        state.menuToggle = !state.menuToggle;
+    })
+
+    document.getElementById('createGroupButton').addEventListener('click', () => {
+        state.menuToggle = !state.menuToggle;
+        elements.menu.style.display = 'none';
+        elements.asideHeader.style.display = 'none';
+        elements.chatList.style.display = 'none';
+        elements.createGroupChatForm.style.display = 'block';
+    })
+
+    document.getElementById('crGrChFormBackButton').addEventListener('click', () => {
+        elements.asideHeader.style.display = 'grid';
+        elements.createGroupChatForm.style.display = 'none';
+        elements.chatList.style.display = 'flex';
+    })
+
+    // Кнопка "Назад" в мобильной версии
+    document.querySelector('.mobileBackButton').addEventListener('click', () => {
+        state.currentChat = null;
+        updateLayout();
+    });
 }
 
 // =====================
