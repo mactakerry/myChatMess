@@ -99,23 +99,28 @@ function renderChatList(chats) {
     elements.addChatList.innerHTML = '';
 
     chats.forEach(chat => {
-        let chatElement;
-
-        if (chat.groupChat) {
-            chatElement = createChat(chat);
-
-            const groupChatElement = createChat(chat, false);
-            elements.addChatList.appendChild(groupChatElement);
-        } else {
-            if (chat.creator === localStorage.getItem('username')) {
-                chatElement = createChat(chat.id, chat.participant);
-            } else {
-                chatElement = createChat(chat.id, chat.creator);
-            }
-        }
-
-        elements.chatList.appendChild(chatElement);
+        appendChat(chat)
     });
+}
+
+function appendChat(chat) {
+    const chatInf = document.createElement('div');
+    chatInf.classList.add('chatInf');
+
+    if (chat.groupChat) {
+        chatInf.textContent = chat.name;
+
+    } else {
+        if (chat.creator === localStorage.getItem('username')) {
+            chatInf.textContent = chat.participant;
+        } else {
+            chatInf.textContent = chat.creator;
+        }
+    }
+
+    chatInf.dataset.chatId = chat.id;
+
+    elements.chatList.appendChild(chatInf);
 }
 
 function addMessageToChat(content, sender, isBefore = true) {
@@ -213,19 +218,7 @@ async function connect(){
 async function notificationNewChats() {
     state.stompClient.subscribe(`/user/queue/chats/new`, (message) => {
         const newChat = JSON.parse(message.body);
-
-        let chatElement;
-        if (newChat.groupChat) {
-            chatElement = createChat(newChat.id, newChat.name);
-        } else {
-            if (newChat.creator === localStorage.getItem('username')) {
-                chatElement = createChat(newChat.id, newChat.participant);
-            } else {
-                chatElement = createChat(newChat.id, newChat.creator);
-            }
-        }
-
-        elements.chatList.appendChild(chatElement);
+        appendChat(newChat);
     });
 }
 
@@ -445,14 +438,6 @@ async function selectChat(chatElement) {
     await getAllMess(chatElement.dataset.chatId);
 
     updateLayout();
-}
-
-function createChat(chatId, chatName) {
-    const chatInf = document.createElement('div');
-    chatInf.classList.add('chatInf');
-    chatInf.textContent = chatName;
-    chatInf.dataset.chatId = chatId;
-    return chatInf;
 }
 
 function setupScrollListener() {
