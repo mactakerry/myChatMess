@@ -99,29 +99,23 @@ function renderChatList(chats) {
     elements.addChatList.innerHTML = '';
 
     chats.forEach(chat => {
-        const chatElement = createChatElement(chat);
-        elements.chatList.appendChild(chatElement);
+        let chatElement;
 
-        if (chat.isGroupChat) {
-            const groupChatElement = createChatElement(chat, false);
+        if (chat.groupChat) {
+            chatElement = createChat(chat);
+
+            const groupChatElement = createChat(chat, false);
             elements.addChatList.appendChild(groupChatElement);
+        } else {
+            if (chat.creator === localStorage.getItem('username')) {
+                chatElement = createChat(chat.id, chat.participant);
+            } else {
+                chatElement = createChat(chat.id, chat.creator);
+            }
         }
+
+        elements.chatList.appendChild(chatElement);
     });
-}
-
-function createChatElement(chat, isCheckbox) {
-    const chatElement = document.createElement('div');
-    chatElement.classList.add('chatInf');
-    chatElement.textContent = chat.name;
-    chatElement.dataset.chatId = chat.id;
-
-    if (isCheckbox) {
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        chatElement.appendChild(checkbox);
-    }
-
-    return chatElement;
 }
 
 function addMessageToChat(content, sender, isBefore = true) {
@@ -221,19 +215,23 @@ async function notificationNewChats() {
         console.log('before parse CHAT: ' + message)
 
         const newChat = JSON.parse(message.body);
-        // Поиск существующего чата
-        const chatInfs = document.querySelectorAll('.chatInf');
-        for (const chat of chatInfs) {
-            if (chat.textContent === newChat.creator || chat.textContent === newChat.name) {
-                return;
+
+        console.log('new CHAT: ' + newChat.toString());
+        console.log('new CHAT: ' + newChat.groupChat);
+        console.log('new CHAT: ' + newChat.creator);
+
+        let chatElement;
+        if (newChat.groupChat) {
+            chatElement = createChat(newChat.id, newChat.name);
+        } else {
+            if (newChat.creator === localStorage.getItem('username')) {
+                chatElement = createChat(newChat.id, newChat.participant);
+            } else {
+                chatElement = createChat(newChat.id, newChat.creator);
             }
         }
 
-        if (newChat.isGroupChat) {
-            createChat(newChat.id, newChat.name);
-        } else {
-            createChat(newChat.id, newChat.creator);
-        }
+        elements.chatList.appendChild(chatElement);
     });
 }
 
@@ -326,16 +324,9 @@ function setupEventListeners() {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'},
-                    body: JSON.stringify(searchValue)
+                    body: JSON.stringify({username: searchValue})
                 });
 
-
-                const chatId = await chatRes.json();
-
-                const chatInf = createChat(chatId, searchValue);
-
-                document.querySelector('.chatList').appendChild(chatInf);
-                await selectChat(chatInf);
             }
         } catch (err) {
             console.error('Search error:', err);

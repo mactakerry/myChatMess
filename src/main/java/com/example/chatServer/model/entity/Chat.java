@@ -30,6 +30,8 @@ public class Chat {
     @JoinColumn(name = "creator_id")
     private User creator;
 
+    private String participant;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "chat_participants",
@@ -45,6 +47,7 @@ public class Chat {
         name = u1.getUsername() + "-" + u2.getUsername();
         isGroupChat = false;
         participants.add(u1);
+        participant = u2.getUsername();
         participants.add(u2);
         this.creator = creator;
     }
@@ -64,7 +67,8 @@ public class Chat {
                 id,
                 name,
                 isGroupChat,
-                creator
+                creator,
+                participant
         );
     }
 

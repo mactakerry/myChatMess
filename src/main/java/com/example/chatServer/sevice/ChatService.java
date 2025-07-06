@@ -5,7 +5,6 @@ import com.example.chatServer.model.entity.Chat;
 import com.example.chatServer.model.entity.User;
 import com.example.chatServer.repository.ChatRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +16,7 @@ public class ChatService {
     private final ChatRepository chatRepository;
 
     @Transactional
-    public Chat createPrivateChat(User user1, User user2) {
+    public void createPrivateChat(User user1, User user2) {
         Chat newChat = chatRepository.findByName(user1.getUsername() + "-" + user2.getUsername());
 
         if (newChat == null) {
@@ -29,19 +28,19 @@ public class ChatService {
 
         }
 
-        ChatDTO chatDTO = newChat.toDto();
+        ChatDTO dto = newChat.toDto();
+
         messagingTemplate.convertAndSendToUser(
                 String.valueOf(user1.getUsername()),
                 "/queue/chats/new",
-                chatDTO
+                dto
         );
 
         messagingTemplate.convertAndSendToUser(
                 String.valueOf(user2.getUsername()),
                 "/queue/chats/new",
-                chatDTO
+                dto
         );
 
-        return newChat;
     }
 }

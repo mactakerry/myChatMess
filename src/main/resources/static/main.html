@@ -62,10 +62,7 @@
     <script src="js/ChatApp.js" defer>
         const token = localStorage.getItem('token');
 
-        axios.interceptors.request.use(config => {
-            config.headers.Authorization = `Bearer ${token}`;
-            return config;
-        })
+        console.log('Сюда вообще доходит?')
 
 
         // Управление меню

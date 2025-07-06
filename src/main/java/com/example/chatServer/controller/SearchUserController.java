@@ -1,5 +1,6 @@
 package com.example.chatServer.controller;
 
+import com.example.chatServer.model.dto.request.UserRequest;
 import com.example.chatServer.model.entity.User;
 import com.example.chatServer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,7 @@ public class SearchUserController {
     private UserRepository userRepository;
 
     @PostMapping("/searchUser")
-    public ResponseEntity<String> searchUser(@RequestBody SearchUserRequest user) {
+    public ResponseEntity<String> searchUser(@RequestBody UserRequest user) {
         if (userRepository.existsByUsername(user.username())) {
             return ResponseEntity.ok("Success");
         }
@@ -23,5 +24,5 @@ public class SearchUserController {
         return ResponseEntity.ok("Nothing");
     }
 
-    public record SearchUserRequest(String username) {};
+
 }

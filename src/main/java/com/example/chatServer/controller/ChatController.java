@@ -1,5 +1,6 @@
 package com.example.chatServer.controller;
 
+import com.example.chatServer.model.dto.request.UserRequest;
 import com.example.chatServer.model.entity.Chat;
 import com.example.chatServer.model.dto.ChatDTO;
 import com.example.chatServer.model.dto.request.CreateGroupRequest;
@@ -41,20 +42,20 @@ public class ChatController {
 
 
     @PostMapping("/grChat")
-    public ResponseEntity<Long> grChat(@RequestBody String username) {
+    public ResponseEntity<Long> grChat(@RequestBody UserRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = authentication.getName();
 
         User user1 = userService.loadUserByUsername(currentUsername);
-        User user2 = userService.loadUserByUsername(username);
+        User user2 = userService.loadUserByUsername(request.username());
 
         if (user1 == null || user2 == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        Chat chat = chatService.createPrivateChat(user1, user2);
+        chatService.createPrivateChat(user1, user2);
 
-        return ResponseEntity.ok(chat.getId());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/getAllUserChats")
