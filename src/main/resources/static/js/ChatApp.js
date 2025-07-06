@@ -109,13 +109,21 @@ function appendChat(chat) {
 
     if (chat.groupChat) {
         chatInf.textContent = chat.name;
-
     } else {
         if (chat.creator === localStorage.getItem('username')) {
             chatInf.textContent = chat.participant;
         } else {
             chatInf.textContent = chat.creator;
         }
+
+        const chatInf2 = chatInf.cloneNode(true);
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        const label = document.createElement('label');
+        label.appendChild(checkbox);
+        chatInf2.appendChild(label);
+
+        elements.addChatList.appendChild(chatInf2);
     }
 
     chatInf.dataset.chatId = chat.id;
@@ -376,17 +384,15 @@ function setupEventListeners() {
 
         await fetch('/createGroup', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: elements.groupNameInput.value, participants:participants, creatorName:localStorage.getItem('token')})
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({name: elements.groupNameInput.value, participants:participants})
         }).then(async response => {
             return await response.json();
-        }).then(chatId => {
-            const chatInf = document.createElement('div');
-            chatInf.classList.add('chatInf');
-            chatInf.textContent = elements.groupNameInput.value;
-            chatInf.dataset.chatId = chatId;
-            document.querySelector('.chatList').appendChild(chatInf);
-            selectChat(chatInf);
+        }).then(chat => {
+            appendChat(chat);
         })
 
         elements.asideHeader.style.display = 'grid';

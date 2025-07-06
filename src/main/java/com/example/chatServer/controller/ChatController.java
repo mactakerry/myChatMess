@@ -87,7 +87,7 @@ public class ChatController {
     }
 
     @PostMapping("/createGroup")
-    public ResponseEntity<Long> createGroup(@RequestBody CreateGroupRequest request) {
+    public ResponseEntity<?> createGroup(@RequestBody CreateGroupRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         User creator = userService.loadUserByUsername(authentication.getName());
@@ -109,7 +109,7 @@ public class ChatController {
         Chat groupChat = new Chat(request.getName(), participants, creator);
 
         chatRepository.save(groupChat);
-        return ResponseEntity.ok(groupChat.getId());
+        return ResponseEntity.ok(groupChat.toDto());
     }
 
 }
