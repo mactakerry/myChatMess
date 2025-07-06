@@ -131,25 +131,56 @@ function appendChat(chat) {
     elements.chatList.appendChild(chatInf);
 }
 
-function addMessageToChat(content, sender, isBefore = true) {
-    const msg = document.createElement('div');
+function addMessageToChat(message, isBefore = true, specifySender = false) {
+    const corpus = document.createElement('div');
     const msgElement = document.createElement('div');
-    msgElement.style.display = 'inline-block';
+    const msgText = document.createElement('div');
+    const msgTime = document.createElement('small');
+
+    corpus.style.display = 'grid';
+    corpus.style.gridTemplateColumns = 'auto'
+    corpus.style.justifyItems = 'start'
+    corpus.style.margin = '10px';
+
+    msgElement.style.display = 'grid';
+    msgElement.style.gridTemplateColumns = 'auto auto';
+    msgElement.style.columnGap = '10px';
+    msgElement.style.maxWidth = '80%';
     msgElement.style.borderRadius = '20px';
     msgElement.style.backgroundColor = '#212121';
-    msgElement.style.padding = '15px';
-    msgElement.textContent = content;
-    if (sender === localStorage.getItem('username')) {
-        msgElement.style.backgroundColor = 'mediumslateblue';
-        msg.style.textAlign = 'right';
+    msgElement.style.padding = '10px';
+
+    msgText.textContent = message.content;
+    msgText.style.alignSelf = 'start';
+
+
+
+    // добавление время отправки сообщении
+    const iso = message.createdAt;
+
+    const timeRegex = /T(\d{2}:\d{2})/;
+    const match = iso.match(timeRegex);
+    const coolTime = match ? match[1] : "??:??";
+
+    msgTime.textContent = coolTime;
+    msgTime.style.fontSize = '12px'
+    msgTime.style.color = 'gray';
+
+    if (message.sender === localStorage.getItem('username')) {
+        msgElement.style.backgroundColor = '#766ac8';
+        corpus.style.justifyItems = 'end';
+        msgTime.style.color = '#b7b1e2';
     }
-    msg.style.margin = '10px';
-    msg.appendChild(msgElement);
+
+    msgElement.appendChild(msgText);
+    msgElement.appendChild(msgTime);
+
+    corpus.appendChild(msgElement);
 
     if (isBefore) {
-        elements.chat.insertBefore(msg, elements.chat.firstChild);
+        elements.chat.insertBefore(corpus, elements.chat.firstChild);
     } else {
-        elements.chat.appendChild(msg)
+        elements.chat.appendChild(corpus)
     }
 
     elements.chat.scrollTop = elements.chat.scrollHeight;
@@ -181,7 +212,8 @@ async function getAllMess(chatId, isInitialLoad = false) {
         } else {
             state.allMessages = messages;
             messages.forEach((message) => {
-                addMessageToChat(message.content, message.sender);
+                console.log('MESSAGE ' + message.createdAt)
+                addMessageToChat(message);
             })
 
             state.currentPage++;
@@ -246,7 +278,7 @@ async function subscribeToChat(chatId) {
                 console.log('before parse: ' + message);
                 const msg = JSON.parse(message.body);
 
-                addMessageToChat(msg.content, msg.sender, false);
+                addMessageToChat(msg, false);
 
             }
         );
