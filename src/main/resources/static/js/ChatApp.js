@@ -131,14 +131,16 @@ function appendChat(chat) {
     elements.chatList.appendChild(chatInf);
 }
 
-function addMessageToChat(message, isBefore = true, specifySender = false) {
+function addMessageToChat(message, isBefore = true) {
     const corpus = document.createElement('div');
     const msgElement = document.createElement('div');
     const msgText = document.createElement('div');
     const msgTime = document.createElement('small');
+    const sender = document.createElement('small');
 
     corpus.style.display = 'grid';
     corpus.style.gridTemplateColumns = 'auto'
+    corpus.style.gridAutoRows = 'auto'
     corpus.style.justifyItems = 'start'
     corpus.style.margin = '10px';
 
@@ -150,10 +152,18 @@ function addMessageToChat(message, isBefore = true, specifySender = false) {
     msgElement.style.backgroundColor = '#212121';
     msgElement.style.padding = '10px';
 
+
+
     msgText.textContent = message.content;
     msgText.style.alignSelf = 'start';
 
-
+    if (message.groupChat) {
+        sender.textContent = message.sender;
+        sender.style.display = 'block';
+        sender.style.marginBottom = '10px';
+        sender.style.fontStyle = 'italic';
+        msgText.insertBefore(sender, msgText.firstChild);
+    }
 
     // добавление время отправки сообщении
     const iso = message.createdAt;
@@ -171,6 +181,8 @@ function addMessageToChat(message, isBefore = true, specifySender = false) {
         corpus.style.justifyItems = 'end';
         msgTime.style.color = '#b7b1e2';
     }
+
+
 
     msgElement.appendChild(msgText);
     msgElement.appendChild(msgTime);
